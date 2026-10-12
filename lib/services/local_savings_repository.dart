@@ -21,9 +21,25 @@ import 'package:sqflite_common_ffi/sqflite_common_ffi.dart';
 
 import 'savings_repository.dart';
 
+/// D-15: the local SQLite database could not be created or opened (disk
+/// full, read-only filesystem, bad path, etc.). Distinct from a read
+/// failure (D-14) or a write failure (D-13): the app enters a dedicated
+/// "storage unavailable" state (total hidden, coin taps disabled) instead
+/// of showing a failed read or a failed save.
+class StorageUnavailableException implements Exception {
+  StorageUnavailableException(this.detail);
+
+  final String detail;
+
+  @override
+  String toString() => 'Storage unavailable: $detail';
+}
+
 class LocalSavingsRepository extends SavingsRepository {
   // The database is opened lazily, once, and kept for the lifetime of the app.
-  late final Database _db;
+  // Null until [_open] succeeds — a failed open (D-15) leaves the repository
+  // unopened so a later call can retry.
+  Database? _db;
   bool _opened = false;
 
   LocalSavingsRepository();
@@ -32,22 +48,29 @@ class LocalSavingsRepository extends SavingsRepository {
     if (_opened) {
       return;
     }
-    final path = getDatabasesPath();
+    // sqflite_common_ffi does not register the global factory by itself; the
+    // top-level `openDatabase`/`getDatabasesPath` API requires it once, before
+    // first use (per package docs/examples).
+    if (databaseFactoryOrNull == null) {
+      databaseFactory = databaseFactoryFfi;
+    }
+    final path = await getDatabasesPath();
     final dbPath = '$path/quitcash_local.db';
-    _db = await openDatabase(dbPath);
-    await _ensureSchema();
-    _opened = true;
-  }
-
-  Future<void> _ensureSchema() async {
-    await _db.execute("""
-      CREATE TABLE IF NOT EXISTS savings (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id TEXT NOT NULL,
-        amount INTEGER NOT NULL,
-        created_at INTEGER NOT NULL
+    try {
+      _db = await openDatabase(
+        dbPath,
+        version: 1,
+        onUpgrade: _onUpgrade,
       );
-    """);
+      _opened = true;
+    } catch (e) {
+      // D-15: unopenable DB (storage full, read-only fs, ...) is a distinct
+      // failure mode from a read failure (D-14) — the app enters a dedicated
+      // "storage unavailable" state.
+      _db = null;
+      throw StorageUnavailableException(
+          'Could not open local savings database at $dbPath: $e');
+    }
   }
 
   /// Validate a savings amount at the seam (D-09):
@@ -71,13 +94,27 @@ class LocalSavingsRepository extends SavingsRepository {
   /// drift (e.g. 1.1 * 100 != 110 exactly).
   static int _dollarsToCents(double amount) => (amount * 100).round();
 
+  /// Schema version 1; [onUpgrade] re-runs the idempotent schema creation so
+  /// future migrations can migrate in place (D-07, 01-03 Task 2).
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    await db.execute(
+      """
+      CREATE TABLE IF NOT EXISTS savings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        amount INTEGER NOT NULL,
+        created_at INTEGER NOT NULL
+      );
+    """);
+  }
+
   @override
   Future<void> add(double amount) async {
     _validateAmount(amount);
     await _open();
     final cents = _dollarsToCents(amount);
     final nowMs = DateTime.now().millisecondsSinceEpoch;
-    await _db.insert('savings', {
+    await _db!.insert('savings', {
       'user_id': 'local',
       'amount': cents,
       'created_at': nowMs,
@@ -87,7 +124,7 @@ class LocalSavingsRepository extends SavingsRepository {
   @override
   Future<double> getTotal() async {
     await _open();
-    final rows = await _db.rawQuery(
+    final rows = await _db!.rawQuery(
       "SELECT COALESCE(SUM(amount), 0) AS total FROM savings WHERE user_id = 'local'",
     );
     // SUM of INTEGER over zero rows is NULL; COALESCE guards against that.
@@ -98,6 +135,6 @@ class LocalSavingsRepository extends SavingsRepository {
   @override
   Future<void> clear() async {
     await _open();
-    await _db.delete('savings', where: "user_id = 'local'");
+    await _db!.delete('savings', where: "user_id = 'local'");
   }
 }
