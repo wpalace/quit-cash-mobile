@@ -38,6 +38,12 @@ dependencies:
   provider: ^6.1.5+1
   http: ^1.6.0
 
+  # Local-only persistence (Phase 1). On Linux the sqflite_common_ffi backend
+  # (SQLite over FFI) runs fully locally — no server, no auth.
+  # (This is a Linux-only target; the platform plugins sqflite/sqflite_android/
+  # sqflite_darwin are not needed.)
+  sqflite_common_ffi: ^2.4.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
