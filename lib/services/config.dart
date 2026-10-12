@@ -2,9 +2,10 @@
 //
 // Compile-time build configuration selected via `--dart-define CONFIG=local|cloud`.
 //
-// Flutter injects a top-level `const String CONFIG` when the build flag is
-// passed. [AppConfig.fromDefine] resolves that const to [AppConfig.local] or
-// [AppConfig.cloud]. Resolution rules (D-09 / D-10 / D-11):
+// `--dart-define` does *not* create a top-level identifier; the entry point
+// (main.dart) reads the flag as a compile-time constant via
+// `String.fromEnvironment('CONFIG', defaultValue: 'local')` and passes it to
+// [AppConfig.fromDefine]. Resolution rules (D-09 / D-10 / D-11):
 //
 //   * "local" (or "" ) -> [AppConfig.local]   (the default)
 //   * "cloud"          -> [AppConfig.cloud]
@@ -40,20 +41,23 @@ class AppConfig {
 
   /// Resolve the raw `CONFIG` build-flag string to an [AppConfig].
   ///
-  /// [raw] is expected to be the value of the top-level `CONFIG` const.
-  /// This is a pure function and is unit-testable without the build flag.
+  /// [raw] is the value of the compile-time `CONFIG` flag read in [main.dart]
+  /// via [String.fromEnvironment]. Pure, case-insensitive, and unit-testable
+  /// without the build flag. Dart has no const functions, so the const-folded
+  /// keyword comparison lives in [main.dart] and the binary-level branch is
+  /// constant-folded at the branch site (D-10). A typoed/unknown value
+  /// throws [ArgumentError] (fail-fast, D-10); it never falls through to
+  /// local.
   static AppConfig fromDefine(String raw) {
     switch (raw.toLowerCase()) {
+      case 'cloud':
+        return cloud;
       case 'local':
         return local;
       case '':
-        // D-09: empty / unspecified -> default to local.
+        // D-09: missing or empty flag -> default to local.
         return local;
-      case 'cloud':
-        return cloud;
       default:
-        // D-10: fail fast on unknown / typoed values; never fall through to
-        // local.
         throw ArgumentError(
           'Unknown CONFIG value "$raw". Expected "local" or "cloud".',
         );
@@ -62,9 +66,9 @@ class AppConfig {
 }
 
 /// Build-time repository seam (D-10). [appConfig] is a compile-time constant
-/// (it comes from [AppConfig.fromDefine(CONFIG)]), so the compiler eliminates
-/// the branch that is not taken: the local binary contains no cloud code and
-/// vice versa.
+/// (constant-folded in main.dart from [kConfig] / [AppConfig.fromDefine]), so
+/// the compiler eliminates the branch that is not taken: the local binary
+/// contains no cloud code and vice versa.
 SavingsRepository repositoryFor(AppConfig appConfig) {
   if (appConfig.isCloud) {
     return CloudSavingsRepository();

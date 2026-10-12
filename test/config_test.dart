@@ -2,11 +2,11 @@
 //
 // Tests the compile-time build-flag seam ([AppConfig]) in isolation.
 //
-// These tests deliberately do NOT import the app entrypoint (lib/main.dart),
-// because the top-level `CONFIG` const is only defined under
-// `flutter build`/`run --dart-define CONFIG=...` and is unavailable to
-// `flutter test`. [AppConfig.fromDefine] is a pure function, which is exactly
-// why the seam is split this way (D-10 tree-shakeable local/cloud).
+// These tests deliberately do NOT import the app entrypoint (lib/main.dart):
+// `flutter test` does not inject `--dart-define`, so the entrypoint's compile-
+// time flag read (`String.fromEnvironment` in main.dart) has no flag value
+// under tests. [AppConfig.fromDefine] is a pure **const** function, which is
+// exactly why the seam is split this way (D-10 tree-shakeable local/cloud).
 //
 // Phase 3 (QUA-01/QUA-02) adds the real UI / GUI E2E tests on top of this.
 

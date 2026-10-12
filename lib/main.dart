@@ -4,18 +4,39 @@ import 'package:provider/provider.dart';
 import 'services/config.dart';
 import 'services/savings_repository.dart';
 
-/// Read the compile-time build flag and wire the app to the matching
-/// persistence path (D-09/D-10).
+/// Build flag read from `--dart-define CONFIG` (D-09).
 ///
-/// The app is *always* built with an explicit `CONFIG` value:
-///   * local build (default):  `flutter run --dart-define CONFIG=local`
+/// Flutter does *not* inject a top-level identifier for `--dart-define` — the
+/// flag value is a compile-time constant read with [String.fromEnvironment].
+///   * local build (default): no flag, or `flutter run --dart-define CONFIG=local`
 ///   * cloud build (Phase 2):  `flutter run --dart-define CONFIG=cloud`
-/// An empty value defaults to local (D-09); an unknown/typoed value throws
-/// (fail-fast, D-10) so the local binary can never silently fall through to
-/// cloud and vice versa. The `repositoryFor` seam is const-keyed, so the
-/// unused branch is tree-shaken out of the binary (LOC-03).
+/// Missing flag (or empty value) defaults to local (D-09); an unknown/typoed
+/// value throws (fail-fast, D-10) so the local binary can never silently fall
+/// through to cloud and vice versa.
+const String kConfig = String.fromEnvironment('CONFIG', defaultValue: 'local');
+
+/// Wire the app to the matching persistence path (D-09/D-10, LOC-03).
+///
+/// [AppConfig.fromDefine] is the pure, unit-testable seam. The keyword set
+/// below is mirrored as **const local variables** over const string equality
+/// (Dart has no const functions); [appConfig] constant-folds to
+/// [AppConfig.local] or [AppConfig.cloud] at build time, so [repositoryFor]
+/// branches on a compile-time-known [AppConfig] and AOT eliminates the
+/// unused branch from the binary (D-10).
 void main() {
-  final AppConfig appConfig = AppConfig.fromDefine(CONFIG);
+  const bool _isLocal =
+      kConfig == 'local' || kConfig == 'LOCAL' || kConfig == '';
+  const bool _isCloud = kConfig == 'cloud' || kConfig == 'CLOUD';
+
+  if (!_isLocal && !_isCloud) {
+    // D-10: fail-fast on unknown / typoed values; never fall through to local.
+    // (Const expressions cannot throw, so this is a launch-time fail-fast.)
+    throw ArgumentError(
+      'Unknown CONFIG value "$kConfig". Expected "local" or "cloud".',
+    );
+  }
+
+  const AppConfig appConfig = _isCloud ? AppConfig.cloud : AppConfig.local;
   final SavingsRepository repository = repositoryFor(appConfig);
   runApp(
     ChangeNotifierProvider(
