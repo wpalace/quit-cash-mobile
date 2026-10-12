@@ -1,44 +1,76 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'services/api_service.dart';
-// import 'package:opentelemetry/api.dart'; // Uncomment when OTel is fully configured
 
+import 'services/config.dart';
+import 'services/savings_repository.dart';
+
+/// Read the compile-time build flag and wire the app to the matching
+/// persistence path (D-09/D-10).
+///
+/// The app is *always* built with an explicit `CONFIG` value:
+///   * local build (default):  `flutter run --dart-define CONFIG=local`
+///   * cloud build (Phase 2):  `flutter run --dart-define CONFIG=cloud`
+/// An empty value defaults to local (D-09); an unknown/typoed value throws
+/// (fail-fast, D-10) so the local binary can never silently fall through to
+/// cloud and vice versa. The `repositoryFor` seam is const-keyed, so the
+/// unused branch is tree-shaken out of the binary (LOC-03).
 void main() {
+  final AppConfig appConfig = AppConfig.fromDefine(CONFIG);
+  final SavingsRepository repository = repositoryFor(appConfig);
   runApp(
     ChangeNotifierProvider(
-      create: (context) => SavingsModel(),
+      create: (context) => SavingsModel(repository: repository),
       child: const QuitCashApp(),
     ),
   );
 }
 
+/// App-level model. Depends only on the [SavingsRepository] seam; the local
+/// path (Phase 1) is [LocalSavingsRepository] and the cloud path (Phase 2)
+/// will be [CloudSavingsRepository]. No cloud dependency here for the local
+/// build.
 class SavingsModel extends ChangeNotifier {
-  final ApiService _apiService = ApiService();
+  final SavingsRepository _repository;
   double _totalSaved = 0.0;
   bool _isLoading = false;
 
   double get totalSaved => _totalSaved;
   bool get isLoading => _isLoading;
 
-  SavingsModel() {
+  SavingsModel({required SavingsRepository repository})
+      : _repository = repository {
     _loadTotal();
   }
 
+  /// Load the total from the repository — the single source of truth
+  /// (D-04: always `SUM(amount)`, no cached value).
   Future<void> _loadTotal() async {
     _isLoading = true;
     notifyListeners();
-    _totalSaved = await _apiService.getTotalSavings();
+    _totalSaved = await _repository.getTotal();
     _isLoading = false;
     notifyListeners();
   }
 
+  /// Record a savings of [amount] dollars. Validates at the app boundary
+  /// (D-09): finite, non-negative, <= $9999.00. Non-numeric / empty input is
+  /// rejected where the user enters a value (the coin buttons here are fixed
+  /// and valid; a text-entry UI lands in Phase 3).
   Future<void> addSavings(double amount) async {
+    if (!amount.isFinite) {
+      throw ArgumentError('Amount must be a number.');
+    }
+    if (amount < 0) {
+      throw ArgumentError('Amount must not be negative.');
+    }
+    if (amount > 9999.0) {
+      throw ArgumentError('Amount must not exceed 9999.00.');
+    }
     try {
-      await _apiService.addSaving(amount);
-      await _loadTotal(); // Refresh total from server
+      await _repository.add(amount);
+      await _loadTotal();
     } catch (e) {
-      print('Failed to add savings: $e');
-      // Optimistic update could go here, but keeping it simple for now
+      throw ArgumentError('Failed to add savings: $e');
     }
   }
 }
@@ -53,7 +85,7 @@ class QuitCashApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.amber),
         useMaterial3: true,
-        fontFamily: 'Roboto', // Default, but good to be explicit
+        fontFamily: 'Roboto',
       ),
       home: const SetupPage(),
     );
@@ -76,9 +108,9 @@ class SetupPage extends StatelessWidget {
             Text(
               'QuitCash',
               style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.amber.shade900,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: Colors.amber.shade900,
+              ),
             ),
             const SizedBox(height: 10),
             const Text('Turn bad habits into cash!'),
@@ -130,9 +162,9 @@ class HomePage extends StatelessWidget {
                       Text(
                         '\$${savings.totalSaved.toStringAsFixed(2)}',
                         style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                              color: Colors.green.shade800,
-                              fontWeight: FontWeight.bold,
-                            ),
+                          color: Colors.green.shade800,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   );
@@ -179,14 +211,24 @@ class CoinButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Provider.of<SavingsModel>(context, listen: false).addSavings(amount);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Saved \$${amount.toStringAsFixed(0)}!'),
-            duration: const Duration(milliseconds: 500),
-          ),
-        );
+      onTap: () async {
+        final model = Provider.of<SavingsModel>(context, listen: false);
+        try {
+          await model.addSavings(amount);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Saved \$${amount.toStringAsFixed(0)}!'),
+              duration: const Duration(milliseconds: 500),
+            ),
+          );
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(e.toString()),
+              duration: const Duration(milliseconds: 500),
+            ),
+          );
+        }
       },
       child: Container(
         decoration: BoxDecoration(
