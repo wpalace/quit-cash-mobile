@@ -1,47 +1,45 @@
 import 'dart:convert';
-import 'dart:io';
-import 'package:http/http.dart' as http;
-import 'package:flutter/foundation.dart';
-import '../models/saving.dart';
 
+import 'package:http/http.dart' as http;
+
+/// Single source of truth for the API base URL (D-11): the port the API
+/// already listens on (8080). The old per-platform `_baseUrl` hardcodes —
+/// including the `8084` port bug — are gone; there is now one source for the
+/// URL.
+const String apiBaseUrl = 'http://127.0.0.1:8080';
+
+/// HTTP service for the **cloud** configuration. Reachable only from the cloud
+/// branch ([CloudSavingsRepository]); the local branch never instantiates it
+/// (D-10). The cloud bug fixes (secrets CLO-02, exposure CLO-03) are Phase 2.
 class ApiService {
-  // Use 10.0.2.2 for Android Emulator, localhost for iOS/Web
-  String get _baseUrl {
-    if (kIsWeb) return 'http://localhost:8084';
-    if (Platform.isAndroid) return 'http://10.0.2.2:8084';
-    return 'http://localhost:8084';
-  }
+  // Single source at 8080 (D-11). Per-platform dev targets (D-12) are added
+  // in this same cloud-only class in a follow-up step.
+  final String _baseUrl = apiBaseUrl;
 
   Future<double> getTotalSavings() async {
-    try {
-      final response = await http.get(Uri.parse('$_baseUrl/api/savings/total'));
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        return (data['total'] as num).toDouble();
-      }
-      throw Exception('Failed to load total savings');
-    } catch (e) {
-      print('Error getting total savings: $e');
-      return 0.0; // Fallback
+    final uri = Uri.parse('$_baseUrl/total-savings');
+    final response = await http.get(uri);
+    if (!await _validateResponse(response)) {
+      throw Exception('Failed to retrieve total savings');
+    }
+    final data = jsonDecode(response.body);
+    return data['total_savings'];
+  }
+
+  Future<void> addSaving(double amount) async {
+    final uri = Uri.parse('$_baseUrl/add-saving');
+    final response = await http.post(
+      uri,
+      body: jsonEncode({'amount': amount}),
+      headers: {'Content-Type': 'application/json'},
+    );
+    if (!await _validateResponse(response)) {
+      throw Exception('Failed to add saving');
     }
   }
 
-  Future<Saving> addSaving(double amount) async {
-    try {
-      final saving = Saving(amount: amount, userId: 'mobile-user');
-      final response = await http.post(
-        Uri.parse('$_baseUrl/api/savings'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(saving.toJson()),
-      );
-
-      if (response.statusCode == 201) {
-        return Saving.fromJson(jsonDecode(response.body));
-      }
-      throw Exception('Failed to add saving');
-    } catch (e) {
-      print('Error adding saving: $e');
-      rethrow;
-    }
+  Future<bool> _validateResponse(http.Response response) async {
+    // http 1.x exposes `statusCode` as a plain int (no HttpStatus enum).
+    return response.statusCode == 200;
   }
 }
