@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -30,11 +32,16 @@ void main() {
   const bool _isCloud = kConfig == 'cloud' || kConfig == 'CLOUD';
 
   if (!_isLocal && !_isCloud) {
-    // D-10: fail-fast on unknown / typoed values; never fall through to local.
-    // (Const expressions cannot throw, so this is a launch-time fail-fast.)
-    throw ArgumentError(
-      'Unknown CONFIG value "$kConfig". Expected "local" or "cloud".',
-    );
+    // D-10/G-01-19: fail-fast on unknown / typoed values; never fall
+    // through to local or cloud. Keep the failure readable by rendering a
+    // dedicated error screen (and logging to stderr) instead of throwing
+    // before runApp(), which would leave a blank window. (Const expressions
+    // cannot throw, so this is a launch-time fail-fast.)
+    final message =
+        'Unknown CONFIG value "$kConfig". Expected "local" or "cloud".';
+    stderr.writeln(message);
+    runApp(_ConfigErrorScreen(message: message));
+    return;
   }
 
   const AppConfig appConfig = _isCloud ? AppConfig.cloud : AppConfig.local;
@@ -415,6 +422,62 @@ class CoinButton extends StatelessWidget {
       SnackBar(
         content: Text(message),
         duration: const Duration(milliseconds: 500),
+      ),
+    );
+  }
+}
+
+class _ConfigErrorScreen extends StatelessWidget {
+  final String message;
+  const _ConfigErrorScreen({required this.message});
+
+  /// Readable fail-fast screen for an unknown/typoed CONFIG value (G-01-19).
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: Colors.red.shade50,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Icon(Icons.warning_amber, size: 72, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  'Configuration error',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red.shade900,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Rebuild with --dart-define CONFIG=local or CONFIG=cloud',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -7,8 +7,10 @@
 // is on by default) and top-level `deleteDatabase` closes the cached helper
 // and removes the file, so a fresh `LocalSavingsRepository` after `_reset()`
 // starts from a clean slate. All tests run against the real FFI backend
-// (same isolate + native library the app uses), with the database at
-// `<cwd>/.dart_tool/sqflite_common_ffi/databases/`.
+// (same isolate + native library the app uses). On desktop (Linux) the DB
+// lives in the application-support directory chosen by
+// getApplicationSupportDirectory() (path_provider Linux impl / XDG), not the
+// cwd-relative FFI default.
 //
 // Tests are written to be order-independent: each one that touches the app
 // database deletes it at the top and at the end.
@@ -16,6 +18,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:path_provider_linux/path_provider_linux.dart';
 import 'package:sqflite_common_ffi/sqflite_common_ffi.dart';
 import '../lib/services/local_savings_repository.dart';
 
@@ -28,7 +31,7 @@ void _ensureFactory() {
 }
 
 Future<String> _dbPath() async =>
-    '${await getDatabasesPath()}/quitcash_local.db';
+    '${await databaseDirectory()}/quitcash_local.db';
 
 /// Close the cached single-instance helper and delete the file (plus
 /// auxiliary journal files).
@@ -56,7 +59,36 @@ Future<dynamic> _captureError(Future<void> Function() op) async {
 
 void main() {
   _ensureFactory();
+  // Desktop path selection uses path_provider's Linux impl (XDG dirs via
+  // Process, no Flutter binding). Register it so getApplicationSupportDirectory
+  // resolves here, not the default MethodChannelPathProvider.
+  PathProviderLinux.registerWith();
   group('LocalSavingsRepository (Phase 1, local-only)', () {
+    test('isDesktopDbPlatform picks desktop OSes, not Android/iOS (G-01-18)',
+        () {
+      // Real [io.Platform.operatingSystem] values are lower-cased.
+      expect(isDesktopDbPlatform('linux'), isTrue);
+      expect(isDesktopDbPlatform('windows'), isTrue);
+      expect(isDesktopDbPlatform('macos'), isTrue);
+      expect(isDesktopDbPlatform('android'), isFalse);
+      expect(isDesktopDbPlatform('ios'), isFalse);
+      expect(isDesktopDbPlatform('fuchsia'), isFalse);
+      // Case-insensitivity (robustness for hand-typed values).
+      expect(isDesktopDbPlatform('Linux'), isTrue);
+      expect(isDesktopDbPlatform('macOS'), isTrue);
+      expect(isDesktopDbPlatform('ANDROID'), isFalse);
+    });
+    test('DB directory is launch-cwd independent (XDG app-support; LOC-02/G-01-18)',
+        () async {
+      final dir = await databaseDirectory();
+      final cwd = Directory.current.path;
+      expect(
+          dir.startsWith(cwd),
+          isFalse,
+          reason: 'DB path must not be relative to the launch working ' +
+                  'directory (it is the XDG app-support location).',
+      );
+    });
     test(
         'add persists integer cents, user_id local, autoincrement ids, epoch-ms created_at (D-01/D-02/D-05)',
         () async {
@@ -168,7 +200,7 @@ void main() {
       // Make the FFI data dir non-writable so the file cannot be created.
       // (Directory.chmod was removed in this Dart version; use shell chmod.)
       await _reset();
-      final dataDir = Directory(await getDatabasesPath());
+      final dataDir = Directory(await databaseDirectory());
       await dataDir.create(recursive: true);
       final path = '$dataDir.path/quitcash_local.db';
       if (File(path).existsSync()) {

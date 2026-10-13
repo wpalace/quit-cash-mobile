@@ -1,11 +1,15 @@
 // lib/services/local_savings_repository.dart
 //
-// Local-only persistence backed by SQLite (FFI), user_id = 'local', integer
-// cents (D-04/D-05), epoch-ms timestamps (D-06).
+// Local-only persistence backed by SQLite (user_id = 'local', integer cents
+// (D-04/D-05), epoch-ms timestamps (D-06)).
 //
-// On Linux the sqflite package falls back to the sqflite_common_ffi backend
-// (added as a dependency), so `openDatabase` / `getDatabasesPath` run locally.
-//
+// Cross-platform storage layer (Phase 1, G-01-17): Android/iOS use the
+// `sqflite` mobile plugin (its default factory), while desktop
+// (Linux/Windows/macOS) uses `sqflite_common_ffi` (SQLite over FFI), since
+// the sqflite plugin has no Linux target. The FFI factory is set only on
+// desktop; the DB directory is the application-support dir on desktop
+// (launch-cwd-independent, G-01-18) and the sqflite plugin's databases dir
+// on mobile.
 //
 // Database file: `quitcash_local.db` (SQLite), schema v1:
 //
@@ -17,9 +21,38 @@
 //
 // Total-savings source of truth is always `SELECT SUM(amount)` from local
 // SQLite (D-04) — no cached value.
+import 'dart:io' as io;
+
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite_common_ffi/sqflite_common_ffi.dart';
 
 import 'savings_repository.dart';
+
+/// Whether [os] (the value of [io.Platform.operatingSystem]) is a desktop OS
+/// that should use the application-support database directory and the FFI
+/// backend, as opposed to the mobile `sqflite` plugin factory.
+///
+/// Pure (no IO) so it can be unit-tested without a real [io.Platform]. The
+/// comparison is case-insensitive because [io.Platform.operatingSystem] is
+/// lower-cased (e.g. 'linux', 'windows', 'macos').
+bool isDesktopDbPlatform(String os) {
+  final normalized = os.toLowerCase();
+  return normalized == 'linux' || normalized == 'windows' ||
+      normalized == 'macos';
+}
+
+/// Database directory.
+///
+/// Desktop (Linux/Windows/macOS): the application-support directory —
+/// stable and independent of the launch working directory (G-01-18). Mobile
+/// (Android/iOS): the sqflite plugin's default databases directory.
+Future<String> databaseDirectory() async {
+  if (isDesktopDbPlatform(io.Platform.operatingSystem)) {
+    final support = await getApplicationSupportDirectory();
+    return support.path;
+  }
+  return await getDatabasesPath();
+}
 
 /// D-15: the local SQLite database could not be created or opened (disk
 /// full, read-only filesystem, bad path, etc.). Distinct from a read
@@ -48,13 +81,18 @@ class LocalSavingsRepository extends SavingsRepository {
     if (_opened) {
       return;
     }
-    // sqflite_common_ffi does not register the global factory by itself; the
-    // top-level `openDatabase`/`getDatabasesPath` API requires it once, before
-    // first use (per package docs/examples).
-    if (databaseFactoryOrNull == null) {
-      databaseFactory = databaseFactoryFfi;
+    // Platform-select the persistence backend (G-01-17): desktop runs the FFI
+    // backend (`sqflite_common_ffi`), which does not register the global factory
+    // by itself; Android/iOS keep the default sqflite plugin factory.
+    if (isDesktopDbPlatform(io.Platform.operatingSystem)) {
+      sqfliteFfiInit();
+      if (databaseFactoryOrNull == null) {
+        databaseFactory = databaseFactoryFfi;
+      }
     }
-    final path = await getDatabasesPath();
+    // Stable DB directory (G-01-18): application-support dir on desktop
+    // (launch-cwd-independent), sqflite plugin databases dir on mobile.
+    final path = await databaseDirectory();
     final dbPath = '$path/quitcash_local.db';
     try {
       _db = await openDatabase(
