@@ -29,9 +29,17 @@ class ApiService {
   // target if present, else the single source at 8080 (D-12, D-11).
   final String _baseUrl = _cloudDevTargets[defaultTargetPlatform] ?? apiBaseUrl;
 
+  // HTTP client, injectable for tests (mocked HTTP client per CLO-01); the
+  // default is the platform client. The cloud-only class is still tree-shaken
+  // out of local builds (D-10) regardless.
+  final http.Client _client;
+
+  ApiService({http.Client? client})
+      : _client = client ?? http.Client();
+
   Future<double> getTotalSavings() async {
     final uri = Uri.parse('$_baseUrl/api/savings/total');
-    final response = await http.get(uri);
+    final response = await _client.get(uri);
     if (!await _validateResponse(response)) {
       throw Exception('Failed to retrieve total savings');
     }
@@ -46,7 +54,7 @@ class ApiService {
 
   Future<void> addSaving(double amount) async {
     final uri = Uri.parse('$_baseUrl/api/savings');
-    final response = await http.post(
+    final response = await _client.post(
       uri,
       body: jsonEncode({'amount': amount, 'userId': 'mobile-user'}),
       headers: {'Content-Type': 'application/json'},
