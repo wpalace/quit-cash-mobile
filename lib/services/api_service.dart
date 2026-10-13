@@ -30,20 +30,25 @@ class ApiService {
   final String _baseUrl = _cloudDevTargets[defaultTargetPlatform] ?? apiBaseUrl;
 
   Future<double> getTotalSavings() async {
-    final uri = Uri.parse('$_baseUrl/total-savings');
+    final uri = Uri.parse('$_baseUrl/api/savings/total');
     final response = await http.get(uri);
     if (!await _validateResponse(response)) {
       throw Exception('Failed to retrieve total savings');
     }
     final data = jsonDecode(response.body);
-    return data['total_savings'];
+    final raw = data['total'];
+    final value = raw is num ? raw.toDouble() : double.tryParse(raw.toString());
+    if (value == null) {
+      throw Exception('Failed to parse total savings');
+    }
+    return value;
   }
 
   Future<void> addSaving(double amount) async {
-    final uri = Uri.parse('$_baseUrl/add-saving');
+    final uri = Uri.parse('$_baseUrl/api/savings');
     final response = await http.post(
       uri,
-      body: jsonEncode({'amount': amount}),
+      body: jsonEncode({'amount': amount, 'userId': 'mobile-user'}),
       headers: {'Content-Type': 'application/json'},
     );
     if (!await _validateResponse(response)) {
@@ -53,6 +58,8 @@ class ApiService {
 
   Future<bool> _validateResponse(http.Response response) async {
     // http 1.x exposes `statusCode` as a plain int (no HttpStatus enum).
-    return response.statusCode == 200;
+    // Accept every 2xx (200, 201 Created, ...) so a successful save is not
+    // rejected; throw only on non-2xx so the shared failure UX fires (D-20).
+    return response.statusCode >= 200 && response.statusCode < 300;
   }
 }
