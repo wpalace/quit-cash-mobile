@@ -1,5 +1,5 @@
 name: quit_cash_mobile
-description: "A new Flutter project."
+description: "QuitCash: turn quit-a-habit wins into gold coins. Client-side only."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -34,19 +34,9 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  opentelemetry: ^0.18.10
   provider: ^6.1.5+1
-  http: ^1.6.0
-
-  # Local-only persistence (Phase 1): SQLite, fully local — no server, no auth.
-  # Android/iOS use the sqflite mobile plugin; desktop (Linux/Windows/macOS)
-  # uses sqflite_common_ffi (SQLite over FFI), since the sqflite plugin has no
-  # Linux target. path_provider supplies a stable (launch-cwd-independent) DB
-  # directory on desktop.
-  sqflite: ^2.4.4
-  sqflite_common_ffi: ^2.4.3
-  path_provider: ^2.1.6
-
+  shared_preferences: ^2.5.6
+  # Client-side only persistence (launch build): no server, zero infra.
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -57,6 +47,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  shared_preferences_platform_interface: ^2.4.2
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
