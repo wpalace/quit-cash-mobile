@@ -38,7 +38,7 @@ void main() {
     );
     await Future<void>.delayed(Duration.zero);
     final first = await model.addSavings(10);
-    expect(first!.newLevel, 2);
+    expect(first!.newLevel, 1);
     expect(first.badges.map((b) => b.id), containsAll(['first', 'ten']));
     final second = await model.addSavings(1);
     expect(second!.isEmpty, isTrue);

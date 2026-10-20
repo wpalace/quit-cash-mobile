@@ -57,7 +57,7 @@ Follow the steps in sequence. Do not skip steps.
 |------|---------|
 | `lib/main.dart` | Entry point. Selects the repository. |
 | `lib/data/` | `SavingsRepository` seam, on-device and in-memory implementations. |
-| `lib/game/progress.dart` | Pure game rules: XP, levels, streaks, achievements. |
+| `lib/game/progress.dart` | Pure game rules: dollar-milestone levels, coins, streaks, achievements. |
 | `lib/state/savings_model.dart` | App state (`ChangeNotifier`). Returns celebrations. |
 | `lib/ui/widgets/coin_painter.dart` | The 3D spinning gold coin (CustomPainter). |
 | `lib/ui/widgets/effects.dart` | Flying coins, burst, ticking numbers, coin rain. |
@@ -75,3 +75,13 @@ Follow the steps in sequence. Do not skip steps.
 10.1 Use idiomatic Dart lints (`analysis_options.yaml`).
 10.2 Keep `flutter analyze` and `flutter test` clean before each commit.
 10.3 Do not add copyrighted game assets. All coin art is drawn in code.
+
+## 11. Game rules (reference)
+
+11.1 Level comes only from total dollars saved.
+11.2 Level 0 ("Starter") is before the first $1.
+11.3 Thresholds: L1 $1, L2 $20, L3 $50, L4 $100, L5 $200, L6 $500, L7 $1000.
+11.4 After L7, each additional $1000 gives one level ($2000 = L8, $3000 = L9).
+11.5 Coins are cosmetic. A save gives 1 coin per $1. A daily check-in gives 5 coins.
+11.6 Coins do not add to total saved and do not change the level.
+11.7 A save or a check-in on a day keeps the streak alive.

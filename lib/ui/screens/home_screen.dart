@@ -314,10 +314,16 @@ class _Hud extends StatelessWidget {
                   fontWeight: FontWeight.bold,
                 ),
               ),
-              const Spacer(),
-              Text(
-                '${progress.xpIntoLevel} / ${Progress.xpForLevel(progress.level)} XP',
-                style: const TextStyle(color: Colors.white60, fontSize: 12),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '\$${progress.total.floor()} / \$${progress.nextThreshold}'
+                  ' to LV ${progress.level + 1}',
+                  key: const Key('next-level'),
+                  textAlign: TextAlign.end,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white60, fontSize: 12),
+                ),
               ),
             ],
           ),
@@ -448,7 +454,7 @@ class _DailyBonus extends StatelessWidget {
                       Text(
                         done
                             ? 'Come back tomorrow to keep the streak alive'
-                            : 'Check in for +$checkInCoins coins and +$checkInXp XP',
+                            : 'Check in for +$checkInCoins coins and keep your streak',
                         style: TextStyle(
                           color: done ? Colors.white54 : Palette.skyTop,
                         ),

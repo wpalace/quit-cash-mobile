@@ -69,7 +69,7 @@ Future<void> showCelebration(
                     ),
                   if (checkIn && cel.newLevel == null && cel.badges.isEmpty)
                     const Text(
-                      '+$checkInCoins coins · +$checkInXp XP\nStreak protected!',
+                      '+$checkInCoins coins (bonus coins)\nStreak protected!',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white, fontSize: 18),
                     ),

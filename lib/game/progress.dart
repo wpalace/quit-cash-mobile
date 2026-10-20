@@ -17,10 +17,13 @@ class Achievement {
   final bool Function(Progress p) test;
 }
 
-const xpPerDollar = 10;
-const checkInXp = 25;
+/// Level thresholds in dollars of total saved. Level n is reached at
+/// [levelThresholds][n - 1]; after the last entry every further \$1000 is
+/// one more level (\$2000 = L8, \$3000 = L9, ...). Below \$1 is Level 0.
+const levelThresholds = [1, 20, 50, 100, 200, 500, 1000];
 
-/// Coins awarded for one daily check-in (cosmetic coins, not dollars).
+/// Coins awarded for one daily check-in. Coins are a cosmetic currency:
+/// they never add to total saved and never affect level.
 const checkInCoins = 5;
 
 final List<Achievement> achievements = [
@@ -87,7 +90,13 @@ final List<Achievement> achievements = [
     '⭐',
     (p) => p.saveCount >= 25,
   ),
-  Achievement('lvl5', 'Level 5', 'Reach level 5', '🏆', (p) => p.level >= 5),
+  Achievement(
+    'lvl5',
+    'Level 5',
+    'Reach level 5 (\$200 saved)',
+    '🏆',
+    (p) => p.level >= 5,
+  ),
 ];
 
 DateTime _day(DateTime t) => DateTime(t.year, t.month, t.day);
@@ -96,7 +105,6 @@ class Progress {
   Progress._({
     required this.totalCents,
     required this.saveCount,
-    required this.xp,
     required this.currentStreak,
     required this.bestStreak,
     required this.checkedInToday,
@@ -105,7 +113,7 @@ class Progress {
 
   factory Progress.from(List<SaveEntry> entries, {DateTime? now}) {
     final today = _day(now ?? DateTime.now());
-    var cents = 0, saves = 0, xp = 0, coins = 0;
+    var cents = 0, saves = 0, coins = 0;
     var checkedIn = false;
     final days = <DateTime>{};
     for (final e in entries) {
@@ -113,10 +121,8 @@ class Progress {
       if (e.kind == EntryKind.save) {
         cents += e.cents;
         saves++;
-        xp += (e.cents * xpPerDollar) ~/ 100;
         coins += (e.cents ~/ 100).clamp(1, 1 << 30);
       } else {
-        xp += checkInXp;
         coins += checkInCoins;
         if (_day(e.at) == today) checkedIn = true;
       }
@@ -139,7 +145,6 @@ class Progress {
     return Progress._(
       totalCents: cents,
       saveCount: saves,
-      xp: xp,
       currentStreak: current,
       bestStreak: best,
       checkedInToday: checkedIn,
@@ -149,7 +154,6 @@ class Progress {
 
   final int totalCents;
   final int saveCount;
-  final int xp;
   final int currentStreak;
   final int bestStreak;
   final bool checkedInToday;
@@ -159,30 +163,38 @@ class Progress {
 
   double get total => totalCents / 100.0;
 
-  /// XP needed to go from [level] to [level] + 1: 100, 150, 200, ...
-  static int xpForLevel(int level) => 50 + 50 * level;
+  /// Dollars needed to reach [level] (level >= 1).
+  static int thresholdFor(int level) {
+    assert(level >= 1);
+    if (level <= levelThresholds.length) return levelThresholds[level - 1];
+    return 1000 * (level - levelThresholds.length + 1);
+  }
 
-  int get level {
-    var lvl = 1, rest = xp;
-    while (rest >= xpForLevel(lvl)) {
-      rest -= xpForLevel(lvl);
+  /// Level from total dollars saved; 0 before the first \$1.
+  static int levelForCents(int cents) {
+    var lvl = 0;
+    while (cents >= thresholdFor(lvl + 1) * 100) {
       lvl++;
     }
     return lvl;
   }
 
-  int get xpIntoLevel {
-    var lvl = 1, rest = xp;
-    while (rest >= xpForLevel(lvl)) {
-      rest -= xpForLevel(lvl);
-      lvl++;
-    }
-    return rest;
-  }
+  int get level => levelForCents(totalCents);
 
-  double get levelFraction => xpIntoLevel / xpForLevel(level);
+  /// Dollar target of the next level.
+  int get nextThreshold => thresholdFor(level + 1);
 
+  /// Dollar floor of the current level (0 for Level 0).
+  int get currentThreshold => level == 0 ? 0 : thresholdFor(level);
+
+  /// 0..1 progress from the current milestone toward the next one.
+  double get levelFraction =>
+      (totalCents / 100 - currentThreshold) /
+      (nextThreshold - currentThreshold);
+
+  /// Rank per level: index 0 is Level 0 (before the first \$1).
   String get rankTitle => const [
+    'Starter',
     'Rookie Saver',
     'Coin Spotter',
     'Penny Pincher',
@@ -191,7 +203,8 @@ class Progress {
     'Treasure Keeper',
     'Vault Master',
     'Legend',
-  ][(level - 1).clamp(0, 7)];
+    'Mythic',
+  ][level.clamp(0, 9)];
 
   Set<String> get unlocked => {
     for (final a in achievements)
