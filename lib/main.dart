@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'data/prefs_savings_repository.dart';
 import 'data/savings_repository.dart';
+import 'reminders/reminder_service.dart';
 import 'state/savings_model.dart';
 import 'ui/app.dart';
 
@@ -13,7 +14,10 @@ void main() {
   final SavingsRepository repository = PrefsSavingsRepository();
   runApp(
     ChangeNotifierProvider(
-      create: (_) => SavingsModel(repository: repository),
+      create: (_) => SavingsModel(
+        repository: repository,
+        reminders: platformReminderService(),
+      ),
       child: const QuitCashApp(),
     ),
   );

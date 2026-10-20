@@ -45,4 +45,13 @@ class PrefsSavingsRepository implements SavingsRepository {
 
   @override
   Future<void> saveHabit(String habit) => _prefs.setString(habitKey, habit);
+
+  static const reminderKey = 'quitcash.reminder.v1';
+
+  @override
+  Future<String?> loadReminder() => _prefs.getString(reminderKey);
+
+  @override
+  Future<void> saveReminder(String frequency) =>
+      _prefs.setString(reminderKey, frequency);
 }

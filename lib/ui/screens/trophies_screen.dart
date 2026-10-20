@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../game/progress.dart';
 import '../../state/savings_model.dart';
 import '../palette.dart';
+import '../widgets/reminder_picker.dart';
 import 'home_screen.dart' show money;
 
 class TrophiesScreen extends StatelessWidget {
@@ -65,6 +66,29 @@ class TrophiesScreen extends StatelessWidget {
                 for (final a in achievements)
                   _Badge(a: a, unlocked: unlocked.contains(a.id)),
               ],
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '⏰ Reminders (7 pm)',
+                    style: TextStyle(
+                      color: Palette.gold,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ReminderPicker(
+                    value: model.reminder,
+                    onChanged: (f) => applyReminder(context, f),
+                  ),
+                ],
+              ),
             ),
           ),
           SliverToBoxAdapter(

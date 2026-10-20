@@ -10,6 +10,7 @@ import '../../state/savings_model.dart';
 import '../palette.dart';
 import '../widgets/celebration_dialog.dart';
 import '../widgets/effects.dart';
+import '../widgets/reminder_picker.dart';
 import '../widgets/spinning_coin.dart';
 
 const amounts = [1.0, 5.0, 10.0, 20.0];
@@ -42,6 +43,7 @@ class _HomeScreenState extends State<HomeScreen>
   /// Coins shown in the HUD lag the model until the flying coins land.
   int? _displayCoins;
   bool _hudBump = false;
+  bool _reminderPrompted = false;
 
   late final AnimationController _squash = AnimationController(
     vsync: this,
@@ -136,6 +138,13 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     final model = context.watch<SavingsModel>();
     final p = model.progress;
+    // Users who onboarded before reminders existed: ask once.
+    if (model.reminder == null && !_reminderPrompted) {
+      _reminderPrompted = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(showReminderPrompt(context));
+      });
+    }
     final text = Theme.of(context).textTheme;
     return SafeArea(
       child: Stack(

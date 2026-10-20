@@ -57,6 +57,7 @@ Follow the steps in sequence. Do not skip steps.
 |------|---------|
 | `lib/main.dart` | Entry point. Selects the repository. |
 | `lib/data/` | `SavingsRepository` seam, on-device and in-memory implementations. |
+| `lib/reminders/` | Reminder frequency, schedule, copy, notification service. |
 | `lib/game/progress.dart` | Pure game rules: dollar-milestone levels, coins, streaks, achievements. |
 | `lib/state/savings_model.dart` | App state (`ChangeNotifier`). Returns celebrations. |
 | `lib/ui/widgets/coin_painter.dart` | The 3D spinning gold coin (CustomPainter). |
@@ -85,3 +86,17 @@ Follow the steps in sequence. Do not skip steps.
 11.5 Coins are cosmetic. A save gives 1 coin per $1. A daily check-in gives 5 coins.
 11.6 Coins do not add to total saved and do not change the level.
 11.7 A save or a check-in on a day keeps the streak alive.
+
+## 12. Reminders (local notifications)
+
+12.1 Onboarding asks for a frequency: Daily, Every other day, Every three days, Weekly, or Never. Default selection is Daily.
+12.2 The choice is stored on the device (`quitcash.reminder.v1`). The user can change it in Trophies.
+12.3 Users who finished onboarding before this feature see a one-time prompt on the Bank screen.
+12.4 Reminders go out at 7 pm local time (`reminderHour` in `lib/reminders/reminder_plan.dart`).
+12.5 The app queues the next 14 reminders. It rebuilds the queue at each launch, each check-in and each change.
+12.6 The app asks for notification permission only when the user selects an option that is not Never.
+12.7 Android: `POST_NOTIFICATIONS` (Android 13+) and `RECEIVE_BOOT_COMPLETED` are in the manifest. The app uses inexact alarms, so it does not need `SCHEDULE_EXACT_ALARM`.
+12.8 Android: core library desugaring is on in `android/app/build.gradle.kts`. Do not remove it.
+12.9 iOS/macOS: the app asks for alert, badge and sound permission.
+12.10 Web and Linux/Windows: the app stores the choice and shows no notifications.
+12.11 To test on a device, select Daily, then put the device clock forward past 7 pm.

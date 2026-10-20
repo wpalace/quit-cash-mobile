@@ -14,6 +14,10 @@ abstract class SavingsRepository {
   /// The habit the user is quitting (null until onboarding is done).
   Future<String?> loadHabit();
   Future<void> saveHabit(String habit);
+
+  /// Reminder frequency name (see ReminderFrequency); null = never asked.
+  Future<String?> loadReminder();
+  Future<void> saveReminder(String frequency);
 }
 
 /// Volatile repository for tests and previews.
@@ -37,4 +41,12 @@ class InMemorySavingsRepository implements SavingsRepository {
 
   @override
   Future<void> saveHabit(String value) async => habit = value;
+
+  String? reminder;
+
+  @override
+  Future<String?> loadReminder() async => reminder;
+
+  @override
+  Future<void> saveReminder(String value) async => reminder = value;
 }

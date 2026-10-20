@@ -36,6 +36,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   provider: ^6.1.5+1
   shared_preferences: ^2.5.6
+  flutter_local_notifications: ^22.3.2
+  timezone: ^0.11.2
+  flutter_timezone: ^5.1.1
   # Client-side only persistence (launch build): no server, zero infra.
 dev_dependencies:
   flutter_test:
