@@ -8,6 +8,10 @@ import 'reminder_plan.dart';
 
 /// Device reminder seam. The app depends only on this interface.
 abstract class ReminderService {
+  /// False where the platform cannot show notifications (web, Linux,
+  /// Windows). The choice is still stored; the UI shows no warnings.
+  bool get supported => true;
+
   /// Ask the OS for permission. Returns true if reminders can be shown.
   Future<bool> requestPermission();
 
@@ -23,6 +27,9 @@ abstract class ReminderService {
 /// shows nothing, never throws.
 class NoopReminderService implements ReminderService {
   const NoopReminderService();
+
+  @override
+  bool get supported => false;
 
   @override
   Future<bool> requestPermission() async => false;
@@ -58,6 +65,9 @@ class LocalNotificationReminderService implements ReminderService {
     : _plugin = plugin ?? FlutterLocalNotificationsPlugin();
 
   final FlutterLocalNotificationsPlugin _plugin;
+
+  @override
+  bool get supported => true;
   bool _ready = false;
 
   static const _details = NotificationDetails(

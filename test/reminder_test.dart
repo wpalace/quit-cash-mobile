@@ -10,6 +10,9 @@ import 'package:shared_preferences_platform_interface/shared_preferences_async_p
 class FakeReminders implements ReminderService {
   FakeReminders({this.grant = true});
   final bool grant;
+
+  @override
+  bool get supported => true;
   int permissionRequests = 0;
   final scheduled = <ReminderFrequency>[];
 
@@ -156,8 +159,19 @@ void main() {
     });
   });
 
+  test(
+    'unsupported platform (web): no permission prompt, no warning',
+    () async {
+      final m = SavingsModel(repository: InMemorySavingsRepository());
+      await Future<void>.delayed(Duration.zero);
+      expect(await m.setReminder(ReminderFrequency.daily), isTrue);
+      expect(m.reminder, ReminderFrequency.daily);
+    },
+  );
+
   test('noop service (web) never throws', () async {
     const s = NoopReminderService();
+    expect(s.supported, isFalse);
     expect(await s.requestPermission(), isFalse);
     await s.schedule(ReminderFrequency.daily, streak: 1, coins: 1);
   });

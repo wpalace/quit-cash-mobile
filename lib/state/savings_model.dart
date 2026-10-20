@@ -49,13 +49,16 @@ class SavingsModel extends ChangeNotifier {
   ReminderFrequency? get reminder => _reminder;
 
   /// Store [f] and (re)schedule. Permission is requested only for a
-  /// non-Never choice. Returns false if the OS denied notifications.
+  /// non-Never choice on a supported platform. Returns false only if the
+  /// OS denied notifications.
   Future<bool> setReminder(ReminderFrequency f) async {
     _reminder = f;
     notifyListeners();
     await _repo.saveReminder(f.name);
     var granted = true;
-    if (f.enabled) granted = await _reminders.requestPermission();
+    if (f.enabled && _reminders.supported) {
+      granted = await _reminders.requestPermission();
+    }
     await _reschedule();
     return granted;
   }

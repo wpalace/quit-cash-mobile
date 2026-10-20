@@ -9,15 +9,17 @@ class Backdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [Palette.skyTop, Palette.skyBottom, Color(0xFF6A3FB5)],
+    return SizedBox.expand(
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Palette.skyTop, Palette.skyBottom, Color(0xFF6A3FB5)],
+          ),
         ),
+        child: CustomPaint(painter: _Stars(), child: child),
       ),
-      child: CustomPaint(painter: _Stars(), child: child),
     );
   }
 }
