@@ -1,3 +1,4 @@
+import 'package:quit_cash_mobile/domain/models/goal.dart';
 import 'package:quit_cash_mobile/domain/models/save_entry.dart';
 import 'package:quit_cash_mobile/utils/result.dart';
 
@@ -8,13 +9,18 @@ import 'package:quit_cash_mobile/utils/result.dart';
 /// A future cloud implementation (for example the quit-cash-api .NET
 /// service) only has to implement these methods.
 abstract interface class SavingsRepository {
-  Future<Result<List<SaveEntry>>> loadAll();
-  Future<Result<void>> append(SaveEntry entry);
-  Future<Result<void>> clear();
+  /// All goals in creation order (empty until onboarding is done).
+  Future<Result<List<Goal>>> loadGoals();
+  Future<Result<void>> saveGoals(List<Goal> goals);
 
-  /// The habit the user is quitting (null until onboarding is done).
-  Future<Result<String?>> loadHabit();
-  Future<Result<void>> saveHabit(String habit);
+  /// Id of the goal shown on Bank and Trophies; null = none.
+  Future<Result<String?>> loadActiveGoal();
+  Future<Result<void>> saveActiveGoal(String? id);
+
+  /// Savings history of one goal.
+  Future<Result<List<SaveEntry>>> loadAll(String goalId);
+  Future<Result<void>> append(String goalId, SaveEntry entry);
+  Future<Result<void>> clear(String goalId);
 
   /// Reminder frequency name (see ReminderFrequency); null = never asked.
   Future<Result<String?>> loadReminder();

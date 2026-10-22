@@ -1,38 +1,58 @@
 import 'package:quit_cash_mobile/data/repositories/savings_repository.dart';
+import 'package:quit_cash_mobile/domain/models/goal.dart';
 import 'package:quit_cash_mobile/domain/models/save_entry.dart';
 import 'package:quit_cash_mobile/utils/result.dart';
 
 /// Volatile repository for tests and previews.
 class InMemorySavingsRepository implements SavingsRepository {
-  InMemorySavingsRepository([List<SaveEntry>? seed]) : _rows = [...?seed];
-  final List<SaveEntry> _rows;
+  InMemorySavingsRepository();
 
-  String? habit;
+  /// One goal ('g1') for [habit], active, seeded with [seed].
+  InMemorySavingsRepository.withGoal(String habit, [List<SaveEntry>? seed]) {
+    goals.add(Goal(id: 'g1', habit: habit));
+    active = 'g1';
+    entries['g1'] = [...?seed];
+  }
+
+  final goals = <Goal>[];
+  String? active;
+  final entries = <String, List<SaveEntry>>{};
   String? reminder;
   final flags = <String, bool>{};
 
   @override
-  Future<Result<List<SaveEntry>>> loadAll() async =>
-      Ok(List.unmodifiable(_rows));
+  Future<Result<List<Goal>>> loadGoals() async => Ok(List.unmodifiable(goals));
 
   @override
-  Future<Result<void>> append(SaveEntry entry) async {
-    _rows.add(entry);
+  Future<Result<void>> saveGoals(List<Goal> value) async {
+    goals
+      ..clear()
+      ..addAll(value);
     return const Ok(null);
   }
 
   @override
-  Future<Result<void>> clear() async {
-    _rows.clear();
+  Future<Result<String?>> loadActiveGoal() async => Ok(active);
+
+  @override
+  Future<Result<void>> saveActiveGoal(String? id) async {
+    active = id;
     return const Ok(null);
   }
 
   @override
-  Future<Result<String?>> loadHabit() async => Ok(habit);
+  Future<Result<List<SaveEntry>>> loadAll(String goalId) async =>
+      Ok(List.unmodifiable(entries[goalId] ?? const <SaveEntry>[]));
 
   @override
-  Future<Result<void>> saveHabit(String value) async {
-    habit = value;
+  Future<Result<void>> append(String goalId, SaveEntry entry) async {
+    (entries[goalId] ??= []).add(entry);
+    return const Ok(null);
+  }
+
+  @override
+  Future<Result<void>> clear(String goalId) async {
+    entries.remove(goalId);
     return const Ok(null);
   }
 

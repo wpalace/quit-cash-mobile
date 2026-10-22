@@ -136,14 +136,14 @@ void main() {
     });
 
     test('hiding a denomination keeps history', () async {
-      final repo = InMemorySavingsRepository();
+      final repo = InMemorySavingsRepository.withGoal('Smoking');
       final m = SavingsViewModel(repository: repo);
       await Future<void>.delayed(Duration.zero);
       await m.setShowHundred(true);
       await m.addSavings(100);
       await m.setShowHundred(false);
       expect(m.progress.total, 100);
-      expect((await repo.loadAll()).valueOrNull, hasLength(1));
+      expect((await repo.loadAll('g1')).valueOrNull, hasLength(1));
     });
   });
 

@@ -17,14 +17,18 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   String? _pick;
-  ReminderFrequency _reminder = ReminderFrequency.daily;
+
+  /// The reminder choice is global: after deleting every goal, onboarding
+  /// starts from the saved choice instead of re-asking from scratch.
+  late ReminderFrequency _reminder =
+      context.read<SavingsViewModel>().reminder ?? ReminderFrequency.daily;
 
   Future<void> _start() async {
     final model = context.read<SavingsViewModel>();
     await applyReminder(context, _reminder);
     final pick = _pick;
     if (pick == null) return; // The start button is disabled until a pick.
-    await model.setHabit(pick);
+    await model.addGoal(pick);
   }
 
   @override

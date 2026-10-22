@@ -37,7 +37,7 @@ void main() {
   });
 
   testWidgets('existing user gets a one-time reminder prompt', (tester) async {
-    final repo = InMemorySavingsRepository()..habit = 'Smoking';
+    final repo = InMemorySavingsRepository.withGoal('Smoking');
     final model = await pumpApp(tester, repo: repo);
     await tester.pump(const Duration(milliseconds: 500));
     expect(find.text('⏰ Want a nudge?'), findsOneWidget);
@@ -69,8 +69,7 @@ void main() {
   testWidgets('tapping the coin banks money, flies coins, celebrates', (
     tester,
   ) async {
-    final repo = InMemorySavingsRepository()
-      ..habit = 'Smoking'
+    final repo = InMemorySavingsRepository.withGoal('Smoking')
       ..reminder = 'daily';
     final model = await pumpApp(tester, repo: repo);
     await tester.tap(find.byKey(const Key('amount-20')));
@@ -101,8 +100,7 @@ void main() {
   });
 
   testWidgets('default picker hides \$50 and \$100', (tester) async {
-    final repo = InMemorySavingsRepository()
-      ..habit = 'Smoking'
+    final repo = InMemorySavingsRepository.withGoal('Smoking')
       ..reminder = 'never';
     await pumpApp(tester, repo: repo);
     for (final d in [1, 5, 10, 20]) {
@@ -113,8 +111,7 @@ void main() {
   });
 
   testWidgets('all seven denominations when all enabled', (tester) async {
-    final repo = InMemorySavingsRepository()
-      ..habit = 'Smoking'
+    final repo = InMemorySavingsRepository.withGoal('Smoking')
       ..reminder = 'never';
     repo.flags.addAll({'show50': true, 'show100': true, 'show500': true});
     await pumpApp(tester, repo: repo);
@@ -124,8 +121,7 @@ void main() {
   });
 
   testWidgets('ruby banks \$100 and flies to the counter', (tester) async {
-    final repo = InMemorySavingsRepository()
-      ..habit = 'Smoking'
+    final repo = InMemorySavingsRepository.withGoal('Smoking')
       ..reminder = 'never';
     repo.flags['show100'] = true;
     final model = await pumpApp(tester, repo: repo);
@@ -140,8 +136,7 @@ void main() {
   });
 
   testWidgets('diamond is off by default and banks \$500', (tester) async {
-    final repo = InMemorySavingsRepository()
-      ..habit = 'Smoking'
+    final repo = InMemorySavingsRepository.withGoal('Smoking')
       ..reminder = 'never';
     final model = await pumpApp(tester, repo: repo);
     expect(find.byKey(const Key('amount-500')), findsNothing);
@@ -174,8 +169,7 @@ void main() {
   testWidgets('settings toggles hide \$50 and \$100 from the picker', (
     tester,
   ) async {
-    final repo = InMemorySavingsRepository()
-      ..habit = 'Smoking'
+    final repo = InMemorySavingsRepository.withGoal('Smoking')
       ..reminder = 'never';
     repo.flags.addAll({'show50': true, 'show100': true});
     final model = await pumpApp(tester, repo: repo);

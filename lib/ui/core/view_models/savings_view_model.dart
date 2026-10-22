@@ -5,6 +5,7 @@ import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'package:quit_cash_mobile/data/repositories/savings_repository.dart';
 import 'package:quit_cash_mobile/data/services/reminder_service.dart';
+import 'package:quit_cash_mobile/domain/models/goal.dart';
 import 'package:quit_cash_mobile/domain/models/progress.dart';
 import 'package:quit_cash_mobile/domain/models/reminder_plan.dart';
 import 'package:quit_cash_mobile/domain/models/save_entry.dart';
@@ -22,7 +23,8 @@ class Celebration {
 void _logFailure(String what, Object error) =>
     developer.log('$what failed', name: 'quitcash', error: error);
 
-/// App-wide view model: savings, progress, settings and reminders.
+/// App-wide view model: goals, the active goal's savings and progress,
+/// and the global settings and reminders.
 class SavingsViewModel extends ChangeNotifier {
   SavingsViewModel({
     required SavingsRepository repository,
@@ -36,17 +38,90 @@ class SavingsViewModel extends ChangeNotifier {
   final SavingsRepository _repo;
   final ReminderService _reminders;
   final DateTime Function() _clock;
-  List<SaveEntry> _entries = const [];
   bool _loading = true;
   bool _loadError = false;
 
-  String? _habit;
-  String? get habit => _habit;
+  List<Goal> _goals = const [];
+  String? _activeId;
+  final Map<String, List<SaveEntry>> _entriesByGoal = {};
+  int _nextId = 0;
 
-  Future<void> setHabit(String value) async {
-    _habit = value;
+  /// All goals in creation order. Empty means first-install onboarding.
+  List<Goal> get goals => _goals;
+
+  /// The goal shown on Bank and Trophies (null only when there are none).
+  Goal? get activeGoal {
+    for (final g in _goals) {
+      if (g.id == _activeId) return g;
+    }
+    return _goals.firstOrNull;
+  }
+
+  /// Habit of the active goal; null until the first goal exists.
+  String? get habit => activeGoal?.habit;
+
+  List<SaveEntry> entriesFor(String goalId) =>
+      _entriesByGoal[goalId] ?? const [];
+
+  Progress progressFor(String goalId) => Progress.from(entriesFor(goalId));
+
+  /// Dollars saved across every goal (used by reminder copy).
+  int get totalCentsAllGoals =>
+      _goals.fold(0, (sum, g) => sum + progressFor(g.id).totalCents);
+
+  String _newId() {
+    String id;
+    do {
+      id = 'g${_clock().microsecondsSinceEpoch}${_nextId++}';
+    } while (_goals.any((g) => g.id == id));
+    return id;
+  }
+
+  /// Creates a goal and makes it active.
+  Future<Goal> addGoal(String habit, {String? label}) async {
+    final trimmed = label?.trim();
+    final goal = Goal(
+      id: _newId(),
+      habit: habit,
+      label: trimmed == null || trimmed.isEmpty ? null : trimmed,
+    );
+    _goals = [..._goals, goal];
+    _entriesByGoal[goal.id] = const [];
+    _activeId = goal.id;
     notifyListeners();
-    _report('save habit', await _repo.saveHabit(value));
+    _report('save goals', await _repo.saveGoals(_goals));
+    _report('save active goal', await _repo.saveActiveGoal(goal.id));
+    return goal;
+  }
+
+  Future<void> switchGoal(String id) async {
+    if (id == activeGoal?.id || !_goals.any((g) => g.id == id)) return;
+    _activeId = id;
+    notifyListeners();
+    _report('save active goal', await _repo.saveActiveGoal(id));
+  }
+
+  /// Deletes a goal and its history. If it was active, the first remaining
+  /// goal becomes active; deleting the last goal returns to onboarding.
+  /// Global settings (coins, reminder choice) are kept.
+  Future<void> deleteGoal(String id) async {
+    if (await _repo.clear(id) case Error(:final error)) {
+      _logFailure('delete goal history', error);
+      return;
+    }
+    final wasActive = activeGoal?.id == id;
+    _goals = [
+      for (final g in _goals)
+        if (g.id != id) g,
+    ];
+    _entriesByGoal.remove(id);
+    if (wasActive) _activeId = _goals.firstOrNull?.id;
+    notifyListeners();
+    _report('save goals', await _repo.saveGoals(_goals));
+    if (wasActive) {
+      _report('save active goal', await _repo.saveActiveGoal(_activeId));
+    }
+    unawaited(_reschedule());
   }
 
   ReminderFrequency? _reminder;
@@ -72,8 +147,7 @@ class SavingsViewModel extends ChangeNotifier {
   Future<void> _reschedule() async {
     final f = _reminder;
     if (f == null) return;
-    final p = progress;
-    await _reminders.schedule(f, dollars: p.totalCents ~/ 100);
+    await _reminders.schedule(f, dollars: totalCentsAllGoals ~/ 100);
   }
 
   bool _showFifty = false;
@@ -144,12 +218,24 @@ class SavingsViewModel extends ChangeNotifier {
 
   bool get isLoading => _loading;
   bool get loadError => _loadError;
-  List<SaveEntry> get entries => _entries;
-  Progress get progress => Progress.from(_entries);
+
+  /// The active goal's history and progress.
+  List<SaveEntry> get entries => switch (activeGoal) {
+    final g? => entriesFor(g.id),
+    null => const [],
+  };
+  Progress get progress => Progress.from(entries);
 
   Future<void> _load() async {
-    _entries = _orElse('load history', await _repo.loadAll(), const []);
-    _habit = _orElse('load habit', await _repo.loadHabit(), null);
+    _goals = _orElse('load goals', await _repo.loadGoals(), const []);
+    _activeId = _orElse('load active goal', await _repo.loadActiveGoal(), null);
+    for (final g in _goals) {
+      _entriesByGoal[g.id] = _orElse(
+        'load history',
+        await _repo.loadAll(g.id),
+        const [],
+      );
+    }
     _reminder = ReminderFrequency.tryParse(
       _orElse('load reminder', await _repo.loadReminder(), null),
     );
@@ -186,12 +272,14 @@ class SavingsViewModel extends ChangeNotifier {
   }
 
   Future<Celebration?> _record(SaveEntry e) async {
+    final goal = activeGoal;
+    if (goal == null) return null;
     final before = progress;
-    if (await _repo.append(e) case Error(:final error)) {
+    if (await _repo.append(goal.id, e) case Error(:final error)) {
       _logFailure('save entry', error);
       return null;
     }
-    _entries = [..._entries, e];
+    _entriesByGoal[goal.id] = [...entriesFor(goal.id), e];
     notifyListeners();
     // Reminder copy quotes the total, so refresh it.
     unawaited(_reschedule());
@@ -206,12 +294,16 @@ class SavingsViewModel extends ChangeNotifier {
     );
   }
 
+  /// Clears the active goal's history only. Other goals and settings stay.
   Future<void> reset() async {
-    if (await _repo.clear() case Error(:final error)) {
+    final goal = activeGoal;
+    if (goal == null) return;
+    if (await _repo.clear(goal.id) case Error(:final error)) {
       _logFailure('reset', error);
       return;
     }
-    _entries = const [];
+    _entriesByGoal[goal.id] = const [];
     notifyListeners();
+    unawaited(_reschedule());
   }
 }

@@ -13,7 +13,7 @@ void main() {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(430, 1400);
     addTearDown(tester.view.reset);
-    final repo = InMemorySavingsRepository([
+    final repo = InMemorySavingsRepository.withGoal('Smoking', [
       SaveEntry(kind: EntryKind.save, cents: 2000, at: DateTime.now()),
     ]);
     final model = SavingsViewModel(repository: repo);
