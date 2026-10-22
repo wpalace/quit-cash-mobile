@@ -19,6 +19,7 @@ class InMemorySavingsRepository implements SavingsRepository {
   final entries = <String, List<SaveEntry>>{};
   String? reminder;
   final flags = <String, bool>{};
+  final numbers = <String, int>{};
 
   @override
   Future<Result<List<Goal>>> loadGoals() async => Ok(List.unmodifiable(goals));
@@ -57,6 +58,20 @@ class InMemorySavingsRepository implements SavingsRepository {
   }
 
   @override
+  Future<Result<void>> update(String goalId, SaveEntry entry) async {
+    final rows = entries[goalId];
+    final i = rows?.indexWhere((r) => r.id == entry.id) ?? -1;
+    if (rows != null && i >= 0) rows[i] = entry;
+    return const Ok(null);
+  }
+
+  @override
+  Future<Result<void>> remove(String goalId, String entryId) async {
+    entries[goalId]?.removeWhere((r) => r.id == entryId);
+    return const Ok(null);
+  }
+
+  @override
   Future<Result<String?>> loadReminder() async => Ok(reminder);
 
   @override
@@ -71,6 +86,15 @@ class InMemorySavingsRepository implements SavingsRepository {
   @override
   Future<Result<void>> saveFlag(String key, bool value) async {
     flags[key] = value;
+    return const Ok(null);
+  }
+
+  @override
+  Future<Result<int?>> loadNumber(String key) async => Ok(numbers[key]);
+
+  @override
+  Future<Result<void>> saveNumber(String key, int value) async {
+    numbers[key] = value;
     return const Ok(null);
   }
 }

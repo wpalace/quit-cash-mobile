@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:quit_cash_mobile/data/repositories/savings_repository.dart';
 import 'package:quit_cash_mobile/domain/models/goal.dart';
 import 'package:quit_cash_mobile/domain/models/save_entry.dart';
+import 'package:quit_cash_mobile/domain/models/tap_cluster.dart';
 import 'package:quit_cash_mobile/utils/result.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,7 +17,14 @@ class PrefsSavingsRepository implements SavingsRepository {
 
   static const goalsKey = 'quitcash.goals.v1';
   static const activeGoalKey = 'quitcash.goal.active.v1';
-  static String entriesKey(String goalId) => 'quitcash.goal.$goalId.entries.v1';
+
+  /// Clustered history (one record per tap cluster), current format.
+  static String entriesKey(String goalId) => 'quitcash.goal.$goalId.entries.v2';
+
+  /// Per-tap history from before tap clustering. Read only by [_read].
+  static String legacyGoalEntriesKey(String goalId) =>
+      'quitcash.goal.$goalId.entries.v1';
+  static String numberKey(String key) => 'quitcash.number.$key';
   static const reminderKey = 'quitcash.reminder.v1';
   static String flagKey(String key) => 'quitcash.flag.$key';
 
@@ -54,7 +62,8 @@ class PrefsSavingsRepository implements SavingsRepository {
     if (habit == null && (history == null || history.isEmpty)) return const [];
     final goal = Goal(id: migratedGoalId, habit: habit ?? 'Something else');
     if (history != null) {
-      await _prefs.setString(entriesKey(goal.id), history);
+      // Per-tap format: [_read] clusters it on first load.
+      await _prefs.setString(legacyGoalEntriesKey(goal.id), history);
     }
     await _prefs.setString(activeGoalKey, goal.id);
     await _writeGoals([goal]);
@@ -70,7 +79,29 @@ class PrefsSavingsRepository implements SavingsRepository {
 
   Future<List<SaveEntry>> _read(String goalId) async {
     final raw = await _prefs.getString(entriesKey(goalId));
-    if (raw == null || raw.isEmpty) return const [];
+    if (raw == null) return _migrateTaps(goalId);
+    return _decode(raw);
+  }
+
+  /// Per-tap history (v1) becomes clustered records (v2) using
+  /// [defaultTapWindow]. Totals are unchanged. v2 is written before v1 is
+  /// removed, so an interrupted migration re-runs from v1.
+  Future<List<SaveEntry>> _migrateTaps(String goalId) async {
+    final legacy = await _prefs.getString(legacyGoalEntriesKey(goalId));
+    if (legacy == null) return const [];
+    final rows = clusterTaps(_decode(legacy));
+    await _write(goalId, rows);
+    await _prefs.remove(legacyGoalEntriesKey(goalId));
+    return rows;
+  }
+
+  Future<void> _write(String goalId, List<SaveEntry> rows) => _prefs.setString(
+    entriesKey(goalId),
+    jsonEncode([for (final r in rows) r.toJson()]),
+  );
+
+  List<SaveEntry> _decode(String raw) {
+    if (raw.isEmpty) return const [];
     try {
       final list = jsonDecode(raw) as List<Object?>;
       return [
@@ -109,17 +140,29 @@ class PrefsSavingsRepository implements SavingsRepository {
 
   @override
   Future<Result<void>> append(String goalId, SaveEntry entry) =>
+      guard(() async => _write(goalId, [...await _read(goalId), entry]));
+
+  @override
+  Future<Result<void>> update(String goalId, SaveEntry entry) =>
       guard(() async {
-        final rows = [...await _read(goalId), entry];
-        await _prefs.setString(
-          entriesKey(goalId),
-          jsonEncode([for (final r in rows) r.toJson()]),
-        );
+        await _write(goalId, [
+          for (final r in await _read(goalId)) r.id == entry.id ? entry : r,
+        ]);
       });
 
   @override
-  Future<Result<void>> clear(String goalId) =>
-      guard(() => _prefs.remove(entriesKey(goalId)));
+  Future<Result<void>> remove(String goalId, String entryId) => guard(() async {
+    await _write(goalId, [
+      for (final r in await _read(goalId))
+        if (r.id != entryId) r,
+    ]);
+  });
+
+  @override
+  Future<Result<void>> clear(String goalId) => guard(() async {
+    await _prefs.remove(entriesKey(goalId));
+    await _prefs.remove(legacyGoalEntriesKey(goalId));
+  });
 
   @override
   Future<Result<String?>> loadReminder() =>
@@ -136,4 +179,12 @@ class PrefsSavingsRepository implements SavingsRepository {
   @override
   Future<Result<void>> saveFlag(String key, bool value) =>
       guard(() => _prefs.setBool(flagKey(key), value));
+
+  @override
+  Future<Result<int?>> loadNumber(String key) =>
+      guard(() => _prefs.getInt(numberKey(key)));
+
+  @override
+  Future<Result<void>> saveNumber(String key, int value) =>
+      guard(() => _prefs.setInt(numberKey(key), value));
 }

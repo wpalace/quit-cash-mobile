@@ -9,7 +9,9 @@ import 'package:quit_cash_mobile/domain/models/goal.dart';
 import 'package:quit_cash_mobile/domain/models/progress.dart';
 import 'package:quit_cash_mobile/domain/models/reminder_plan.dart';
 import 'package:quit_cash_mobile/domain/models/save_entry.dart';
+import 'package:quit_cash_mobile/domain/models/tap_cluster.dart';
 import 'package:quit_cash_mobile/ui/core/themes/denominations.dart';
+import 'package:quit_cash_mobile/utils/money.dart';
 import 'package:quit_cash_mobile/utils/result.dart';
 
 /// Events the UI celebrates once (level up, new badge).
@@ -87,6 +89,7 @@ class SavingsViewModel extends ChangeNotifier {
     );
     _goals = [..._goals, goal];
     _entriesByGoal[goal.id] = const [];
+    closeCluster();
     _activeId = goal.id;
     notifyListeners();
     _report('save goals', await _repo.saveGoals(_goals));
@@ -96,6 +99,7 @@ class SavingsViewModel extends ChangeNotifier {
 
   Future<void> switchGoal(String id) async {
     if (id == activeGoal?.id || !_goals.any((g) => g.id == id)) return;
+    closeCluster(); // switching goals ends the tap cluster
     _activeId = id;
     notifyListeners();
     _report('save active goal', await _repo.saveActiveGoal(id));
@@ -110,6 +114,7 @@ class SavingsViewModel extends ChangeNotifier {
       return;
     }
     final wasActive = activeGoal?.id == id;
+    if (_cluster?.goalId == id) closeCluster();
     _goals = [
       for (final g in _goals)
         if (g.id != id) g,
@@ -252,34 +257,90 @@ class SavingsViewModel extends ChangeNotifier {
           null,
         ) ??
         false;
+    _tapWindowSeconds = _validWindow(
+      _orElse('load setting', await _repo.loadNumber(tapWindowKey), null),
+    );
     _loading = false;
     notifyListeners();
     // Refresh the queued batch (and its dollar copy) on every launch.
     await _reschedule();
   }
 
+  static const tapWindowKey = 'tapWindowSeconds';
+  int _tapWindowSeconds = defaultTapWindow.inSeconds;
+
+  /// Settings: taps closer together than this join one history record.
+  int get tapWindowSeconds => _tapWindowSeconds;
+
+  static int _validWindow(int? s) =>
+      tapWindowChoices.contains(s) ? s ?? 0 : defaultTapWindow.inSeconds;
+
+  Future<void> setTapWindowSeconds(int seconds) async {
+    _tapWindowSeconds = _validWindow(seconds);
+    notifyListeners();
+    _report(
+      'save setting',
+      await _repo.saveNumber(tapWindowKey, _tapWindowSeconds),
+    );
+  }
+
+  /// The open tap cluster: goal, record id and time of its latest tap.
+  ({String goalId, String entryId, DateTime lastTap})? _cluster;
+  int _nextEntry = 0;
+
+  /// Ends the open cluster; the next tap starts a new record.
+  void closeCluster() => _cluster = null;
+
+  /// One tap. Joins the open cluster if it is for the active goal and the
+  /// previous tap was within the window (the record keeps the first tap's
+  /// time and is updated in place); otherwise writes a new record at once.
+  /// Either way the record is persisted before this returns, so killing
+  /// the app mid-cluster loses nothing. Celebrations are per tap.
   Future<Celebration?> addSavings(double dollars) async {
     if (!dollars.isFinite || dollars <= 0 || dollars > 9999) {
       throw ArgumentError.value(dollars, 'dollars', 'must be in (0, 9999]');
     }
-    return _record(
-      SaveEntry(
-        kind: EntryKind.save,
-        cents: (dollars * 100).round(),
-        at: _clock(),
-      ),
-    );
-  }
-
-  Future<Celebration?> _record(SaveEntry e) async {
     final goal = activeGoal;
     if (goal == null) return null;
+    final cents = (dollars * 100).round();
+    final now = _clock();
     final before = progress;
-    if (await _repo.append(goal.id, e) case Error(:final error)) {
+    final rows = entriesFor(goal.id);
+    final c = _cluster;
+    final i = c == null || c.goalId != goal.id
+        ? -1
+        : rows.indexWhere((r) => r.id == c.entryId);
+    final Result<void> written;
+    final SaveEntry record;
+    if (c != null &&
+        i >= 0 &&
+        rows[i].cents + cents <= maxRecordCents &&
+        joinsCluster(c.lastTap, now, Duration(seconds: _tapWindowSeconds))) {
+      record = rows[i].copyWith(cents: rows[i].cents + cents);
+      written = await _repo.update(goal.id, record);
+      if (written is Ok<void>) {
+        _entriesByGoal[goal.id] = [...rows]..[i] = record;
+      }
+    } else {
+      record = SaveEntry(
+        id: 'e${now.microsecondsSinceEpoch}-${_nextEntry++}',
+        kind: EntryKind.save,
+        cents: cents,
+        at: now,
+      );
+      written = await _repo.append(goal.id, record);
+      if (written is Ok<void>) _entriesByGoal[goal.id] = [...rows, record];
+    }
+    if (written case Error(:final error)) {
       _logFailure('save entry', error);
       return null;
     }
-    _entriesByGoal[goal.id] = [...entriesFor(goal.id), e];
+    _cluster = (goalId: goal.id, entryId: record.id, lastTap: now);
+    return _changed(before);
+  }
+
+  /// Notifies, refreshes reminder copy and reports what was newly earned.
+  Celebration _changed(Progress before) {
     notifyListeners();
     // Reminder copy quotes the total, so refresh it.
     unawaited(_reschedule());
@@ -294,6 +355,57 @@ class SavingsViewModel extends ChangeNotifier {
     );
   }
 
+  /// Edits a record of the active goal. Total, level and badges are
+  /// recomputed from history, so an edit down can drop them again.
+  Future<bool> editEntry(String id, {required int cents, DateTime? at}) async {
+    final goal = activeGoal;
+    if (goal == null || cents <= 0 || cents > maxRecordCents) return false;
+    final rows = entriesFor(goal.id);
+    final i = rows.indexWhere((r) => r.id == id);
+    if (i < 0) return false;
+    final record = rows[i].copyWith(cents: cents, at: at);
+    if (await _repo.update(goal.id, record) case Error(:final error)) {
+      _logFailure('edit entry', error);
+      return false;
+    }
+    closeCluster();
+    _entriesByGoal[goal.id] = [...rows]..[i] = record;
+    _changed(progress);
+    return true;
+  }
+
+  /// Deletes a record of the active goal and returns it (for undo).
+  Future<SaveEntry?> deleteEntry(String id) async {
+    final goal = activeGoal;
+    if (goal == null) return null;
+    final rows = entriesFor(goal.id);
+    final i = rows.indexWhere((r) => r.id == id);
+    if (i < 0) return null;
+    if (await _repo.remove(goal.id, id) case Error(:final error)) {
+      _logFailure('delete entry', error);
+      return null;
+    }
+    closeCluster();
+    final removed = rows[i];
+    _entriesByGoal[goal.id] = [...rows]..removeAt(i);
+    _changed(progress);
+    return removed;
+  }
+
+  /// Puts back a record removed by [deleteEntry] (undo).
+  Future<void> restoreEntry(SaveEntry entry) async {
+    final goal = activeGoal;
+    if (goal == null) return;
+    final rows = entriesFor(goal.id);
+    if (rows.any((r) => r.id == entry.id)) return;
+    if (await _repo.append(goal.id, entry) case Error(:final error)) {
+      _logFailure('restore entry', error);
+      return;
+    }
+    _entriesByGoal[goal.id] = [...rows, entry];
+    _changed(progress);
+  }
+
   /// Clears the active goal's history only. Other goals and settings stay.
   Future<void> reset() async {
     final goal = activeGoal;
@@ -303,6 +415,7 @@ class SavingsViewModel extends ChangeNotifier {
       return;
     }
     _entriesByGoal[goal.id] = const [];
+    closeCluster();
     notifyListeners();
     unawaited(_reschedule());
   }

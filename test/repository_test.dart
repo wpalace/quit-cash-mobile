@@ -85,21 +85,25 @@ void main() {
         (await repo.loadActiveGoal()).valueOrNull,
         PrefsSavingsRepository.migratedGoalId,
       );
-      // The stored history is copied byte for byte (legacy rows included).
+      // The per-tap history is copied byte for byte (legacy rows included).
+      const goalId = PrefsSavingsRepository.migratedGoalId;
       expect(
         await prefs.getString(
-          PrefsSavingsRepository.entriesKey(
-            PrefsSavingsRepository.migratedGoalId,
-          ),
+          PrefsSavingsRepository.legacyGoalEntriesKey(goalId),
         ),
         jsonEncode(legacyRows),
       );
-      final rows =
-          (await repo.loadAll(goals.single.id)).valueOrNull ?? const [];
+      // First load clusters the taps (1 ms apart, so one record).
+      final rows = (await repo.loadAll(goalId)).valueOrNull ?? const [];
       expect(rows.map((r) => (r.cents, r.at.millisecondsSinceEpoch)), [
-        (500, at),
-        (2000, at + 1),
+        (2500, at),
       ]);
+      expect(
+        await prefs.getString(
+          PrefsSavingsRepository.legacyGoalEntriesKey(goalId),
+        ),
+        isNull,
+      );
       // Legacy keys are gone; global settings are untouched.
       expect(
         await prefs.getString(PrefsSavingsRepository.legacyHabitKey),

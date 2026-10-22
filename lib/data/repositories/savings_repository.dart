@@ -22,6 +22,12 @@ abstract interface class SavingsRepository {
   Future<Result<void>> append(String goalId, SaveEntry entry);
   Future<Result<void>> clear(String goalId);
 
+  /// Replaces the record with the same id (no-op if it is gone).
+  Future<Result<void>> update(String goalId, SaveEntry entry);
+
+  /// Removes the record with [entryId].
+  Future<Result<void>> remove(String goalId, String entryId);
+
   /// Reminder frequency name (see ReminderFrequency); null = never asked.
   Future<Result<String?>> loadReminder();
   Future<Result<void>> saveReminder(String frequency);
@@ -29,4 +35,8 @@ abstract interface class SavingsRepository {
   /// Boolean settings (for example 'show50'); null = never set.
   Future<Result<bool?>> loadFlag(String key);
   Future<Result<void>> saveFlag(String key, bool value);
+
+  /// Integer settings (for example the tap window in seconds).
+  Future<Result<int?>> loadNumber(String key);
+  Future<Result<void>> saveNumber(String key, int value);
 }
