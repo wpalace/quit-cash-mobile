@@ -34,6 +34,6 @@ This project follows the house coding standards, vendored at `.standards/` (pinn
 
 ## Project-specific notes
 
-- Standards are synced from `https://github.com/wpalace/coding-standards.git` (assumed remote; the v1.2.0 tag was synced from a local clone with `STANDARDS_SOURCE`). Correct `.standards-version` if the real remote differs.
+- Standards are synced from `https://github.com/wpalace/coding-standards.git` (confirmed remote, 2026-10-21). The initial v1.2.0 sync used a local clone of that repo via `STANDARDS_SOURCE`; normal syncs need no override.
 - `MAKE.md` is the entry point. All checks: `dart format --output=none --set-exit-if-changed . && flutter analyze --fatal-infos && flutter test`.
 - End-to-end test: `integration_test/` runs on web with `flutter drive` and a matching `chromedriver` (see MAKE.md 4.6).
