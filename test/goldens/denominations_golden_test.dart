@@ -31,9 +31,6 @@ void main() {
         ),
       ),
     );
-    await expectLater(
-      find.byType(Row),
-      matchesGoldenFile('denominations.png'),
-    );
+    await expectLater(find.byType(Row), matchesGoldenFile('denominations.png'));
   });
 }

@@ -100,10 +100,8 @@ class SavingsViewModel extends ChangeNotifier {
   }
 
   /// Picker denominations after the Settings toggles.
-  List<Denomination> get pickerDenominations => visibleDenominations(
-    showFifty: _showFifty,
-    showHundred: _showHundred,
-  );
+  List<Denomination> get pickerDenominations =>
+      visibleDenominations(showFifty: _showFifty, showHundred: _showHundred);
 
   /// The denomination to show for a requested amount: the largest visible
   /// one at or below it (Settings may have hidden the requested one).

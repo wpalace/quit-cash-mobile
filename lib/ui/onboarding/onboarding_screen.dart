@@ -119,10 +119,8 @@ class _SectionTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Text(
     text,
-    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-      color: Colors.white,
-      fontWeight: FontWeight.bold,
-    ),
+    style: Theme.of(context).textTheme.titleLarge
+        ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
   );
 }
 

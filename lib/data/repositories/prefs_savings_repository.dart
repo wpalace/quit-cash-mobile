@@ -26,8 +26,7 @@ class PrefsSavingsRepository implements SavingsRepository {
     try {
       final list = jsonDecode(raw) as List<Object?>;
       return [
-        for (final row in list)
-          SaveEntry.fromJson(row as Map<String, Object?>),
+        for (final row in list) SaveEntry.fromJson(row as Map<String, Object?>),
       ];
     } on TypeError catch (e) {
       throw FormatException('Unreadable savings history: $e');

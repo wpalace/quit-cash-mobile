@@ -1,6 +1,4 @@
-
 import 'package:flutter/material.dart';
-
 
 /// Number that rolls smoothly to its new value (slot-machine feel).
 class TickingNumber extends StatelessWidget {

@@ -96,7 +96,10 @@ void main() {
       final repo = PrefsSavingsRepository();
       expect((await repo.loadFlag('show50')).valueOrNull, isNull);
       await repo.saveFlag('show50', false);
-      expect((await PrefsSavingsRepository().loadFlag('show50')).valueOrNull, isFalse);
+      expect(
+        (await PrefsSavingsRepository().loadFlag('show50')).valueOrNull,
+        isFalse,
+      );
     });
 
     test('model defaults both off and reloads saved toggles', () async {

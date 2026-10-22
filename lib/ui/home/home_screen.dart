@@ -208,14 +208,11 @@ class _TotalHeader extends StatelessWidget {
         TickingNumber(
           value: total,
           format: money,
-          style: (text.displayMedium ?? const TextStyle(fontSize: 45))
-              .copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
-                shadows: const [
-                  Shadow(color: Palette.goldDeep, blurRadius: 18),
-                ],
-              ),
+          style: (text.displayMedium ?? const TextStyle(fontSize: 45)).copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            shadows: const [Shadow(color: Palette.goldDeep, blurRadius: 18)],
+          ),
         ),
         if (habit != null)
           Text(
@@ -395,9 +392,9 @@ class _SettingsButton extends StatelessWidget {
       key: const Key('settings'),
       tooltip: 'Settings',
       icon: const Icon(Icons.settings, color: Colors.white),
-      onPressed: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
-      ),
+      onPressed: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (_) => const SettingsScreen())),
     );
   }
 }

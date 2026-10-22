@@ -115,7 +115,10 @@ void main() {
         InMemorySharedPreferencesAsync.empty();
     expect((await PrefsSavingsRepository().loadReminder()).valueOrNull, isNull);
     await PrefsSavingsRepository().saveReminder('weekly');
-    expect((await PrefsSavingsRepository().loadReminder()).valueOrNull, 'weekly');
+    expect(
+      (await PrefsSavingsRepository().loadReminder()).valueOrNull,
+      'weekly',
+    );
   });
 
   group('model', () {

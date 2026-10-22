@@ -50,7 +50,7 @@ void main() {
       final png = await img.toByteData(format: ui.ImageByteFormat.png);
       File(
         '$out/f${i.toString().padLeft(3, '0')}.png',
-      // `!` is safe: PNG encoding of an in-memory image always yields bytes.
+        // `!` is safe: PNG encoding of an in-memory image always yields bytes.
       ).writeAsBytesSync(png!.buffer.asUint8List());
     }
     // Sheet: all denominations, slightly turned so the edge shows.

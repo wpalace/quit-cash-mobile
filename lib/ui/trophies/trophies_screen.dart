@@ -55,10 +55,8 @@ class _Summary extends StatelessWidget {
       children: [
         Text(
           'Trophy Room',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: Palette.gold,
-            fontWeight: FontWeight.w900,
-          ),
+          style: Theme.of(context).textTheme.headlineMedium
+              ?.copyWith(color: Palette.gold, fontWeight: FontWeight.w900),
         ),
         const SizedBox(height: 12),
         Row(
