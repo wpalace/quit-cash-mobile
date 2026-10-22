@@ -27,9 +27,8 @@ class SavingsViewModel extends ChangeNotifier {
   SavingsViewModel({
     required SavingsRepository repository,
     DateTime Function()? clock,
-    ReminderService reminders = const NoopReminderService(),
+    this._reminders = const NoopReminderService(),
   }) : _repo = repository,
-       _reminders = reminders,
        _clock = clock ?? DateTime.now {
     unawaited(_load());
   }

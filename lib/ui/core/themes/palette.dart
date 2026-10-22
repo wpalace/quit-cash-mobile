@@ -12,3 +12,13 @@ abstract final class Palette {
   static const mint = Color(0xFF3DDC97);
   static const card = Color(0x22FFFFFF);
 }
+
+/// [Color.lerp] for two non-null colors.
+Color mixColor(Color a, Color b, double t) =>
+    // `!` is safe: Color.lerp returns null only when both inputs are null.
+    Color.lerp(a, b, t)!;
+
+/// [Offset.lerp] for two non-null offsets.
+Offset mixOffset(Offset a, Offset b, double t) =>
+    // `!` is safe: Offset.lerp returns null only when both inputs are null.
+    Offset.lerp(a, b, t)!;

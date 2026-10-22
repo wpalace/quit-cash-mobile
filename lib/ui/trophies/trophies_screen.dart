@@ -3,55 +3,21 @@ import 'package:provider/provider.dart';
 import 'package:quit_cash_mobile/domain/models/progress.dart';
 import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
 import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
-import 'package:quit_cash_mobile/ui/home/home_screen.dart' show money;
+import 'package:quit_cash_mobile/utils/money.dart';
 
 class TrophiesScreen extends StatelessWidget {
   const TrophiesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final model = context.watch<SavingsViewModel>();
-    final p = model.progress;
+    final p = context.watch<SavingsViewModel>().progress;
     final unlocked = p.unlocked;
-    final next = achievements
-        .where((a) => !unlocked.contains(a.id))
-        .firstOrNull;
-    final text = Theme.of(context).textTheme;
     return SafeArea(
       child: CustomScrollView(
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.all(16),
-            sliver: SliverList.list(
-              children: [
-                Text(
-                  'Trophy Room',
-                  style: text.headlineMedium?.copyWith(
-                    color: Palette.gold,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    _Stat('Total', money(p.total)),
-                    _Stat('Best streak', '${p.bestStreak} d'),
-                    _Stat(
-                      'Badges',
-                      '${unlocked.length}/${achievements.length}',
-                    ),
-                  ],
-                ),
-                if (next != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    'Next up: ${next.emoji} ${next.title} — ${next.description}',
-                    style: const TextStyle(color: Colors.white70),
-                  ),
-                ],
-                const SizedBox(height: 16),
-              ],
-            ),
+            sliver: SliverToBoxAdapter(child: _Summary(progress: p)),
           ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -69,6 +35,48 @@ class TrophiesScreen extends StatelessWidget {
           const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
+    );
+  }
+}
+
+class _Summary extends StatelessWidget {
+  const _Summary({required this.progress});
+  final Progress progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = progress;
+    final unlocked = p.unlocked;
+    final next = achievements
+        .where((a) => !unlocked.contains(a.id))
+        .firstOrNull;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Trophy Room',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            color: Palette.gold,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            _Stat('Total', money(p.total)),
+            _Stat('Best streak', '${p.bestStreak} d'),
+            _Stat('Badges', '${unlocked.length}/${achievements.length}'),
+          ],
+        ),
+        if (next != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            'Next up: ${next.emoji} ${next.title} — ${next.description}',
+            style: const TextStyle(color: Colors.white70),
+          ),
+        ],
+        const SizedBox(height: 16),
+      ],
     );
   }
 }

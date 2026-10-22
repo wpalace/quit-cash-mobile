@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import 'package:quit_cash_mobile/ui/core/themes/denominations.dart';
+import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
 
 /// Paints a chunky, cartoon-3D gold coin rotated [angle] radians around the
 /// vertical (Y) axis. Original artwork in the spirit of classic 3D platformer
@@ -42,13 +43,13 @@ class CoinPainter extends CustomPainter {
     const steps = 14;
     for (var i = 0; i <= steps; i++) {
       final t = i / steps;
-      final p = Offset.lerp(back, front, t)!;
+      final p = mixOffset(back, front, t);
       // Ridged edge: alternate shades like reeding.
-      edgePaint.color = Color.lerp(
+      edgePaint.color = mixColor(
         metal.edge,
         metal.deep,
         (i.isEven ? 0.2 : 0.65),
-      )!;
+      );
       canvas.drawOval(
         Rect.fromCenter(center: p, width: faceW * 2, height: r * 2),
         edgePaint,
@@ -85,8 +86,8 @@ class CoinPainter extends CustomPainter {
           center: const Alignment(-0.35, -0.45),
           radius: 1.05,
           colors: [
-            Color.lerp(metal.deep, metal.light, light)!,
-            Color.lerp(metal.edge, metal.base, light)!,
+            mixColor(metal.deep, metal.light, light),
+            mixColor(metal.edge, metal.base, light),
             metal.deep,
           ],
           stops: const [0.0, 0.55, 1.0],
@@ -291,8 +292,8 @@ class GemPainter extends CustomPainter {
       final k = 0.5 + 0.5 * math.cos(facetAngle - angle * 2 + 0.8);
       final t = (k * 0.85 + bias).clamp(0.0, 1.0);
       return t < 0.5
-          ? Color.lerp(metal.edge, metal.base, t * 2)!
-          : Color.lerp(metal.base, metal.light, (t - 0.5) * 1.4)!;
+          ? mixColor(metal.edge, metal.base, t * 2)
+          : mixColor(metal.base, metal.light, (t - 0.5) * 1.4);
     }
 
     final facet = Paint()..style = PaintingStyle.fill;
@@ -329,7 +330,7 @@ class GemPainter extends CustomPainter {
           begin: Alignment(-1 + math.sin(angle) * 0.6, -1),
           end: const Alignment(1, 1),
           colors: [
-            Color.lerp(metal.base, metal.light, 0.55)!,
+            mixColor(metal.base, metal.light, 0.55),
             metal.base,
             metal.deep,
           ],

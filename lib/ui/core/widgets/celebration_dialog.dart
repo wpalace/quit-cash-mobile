@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:quit_cash_mobile/domain/models/progress.dart';
 import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
 import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
-import 'package:quit_cash_mobile/ui/core/widgets/effects.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/coin_rain.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/spinning_coin.dart';
 
 Future<void> showCelebration(

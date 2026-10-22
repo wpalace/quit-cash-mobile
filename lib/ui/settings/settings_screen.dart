@@ -42,22 +42,7 @@ class SettingsScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.white60),
               ),
               const SizedBox(height: 8),
-              _DenomSwitch(
-                key: const Key('toggle-50'),
-                denomination: denominationFor(50),
-                title: 'Show \$50',
-                subtitle: 'Gold coin',
-                value: model.showFifty,
-                onChanged: model.setShowFifty,
-              ),
-              _DenomSwitch(
-                key: const Key('toggle-100'),
-                denomination: denominationFor(100),
-                title: 'Show \$100',
-                subtitle: 'Ruby gem',
-                value: model.showHundred,
-                onChanged: model.setShowHundred,
-              ),
+              _CoinToggles(model: model),
               const SizedBox(height: 24),
               const Text('⏰ Reminders (7 pm)', style: _heading),
               const SizedBox(height: 8),
@@ -68,16 +53,7 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 32),
               const Text('⚠️ Danger zone', style: _heading),
               const SizedBox(height: 8),
-              OutlinedButton.icon(
-                key: const Key('reset'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.redAccent,
-                  side: const BorderSide(color: Colors.redAccent),
-                ),
-                icon: const Icon(Icons.restart_alt),
-                label: const Text('Reset all progress'),
-                onPressed: () => _confirmReset(context, model),
-              ),
+              _ResetButton(onPressed: () => _confirmReset(context, model)),
             ],
           ),
         ),
@@ -109,6 +85,54 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
     if (ok == true) await model.reset();
+  }
+}
+
+class _CoinToggles extends StatelessWidget {
+  const _CoinToggles({required this.model});
+  final SavingsViewModel model;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        _DenomSwitch(
+          key: const Key('toggle-50'),
+          denomination: denominationFor(50),
+          title: 'Show \$50',
+          subtitle: 'Gold coin',
+          value: model.showFifty,
+          onChanged: model.setShowFifty,
+        ),
+        _DenomSwitch(
+          key: const Key('toggle-100'),
+          denomination: denominationFor(100),
+          title: 'Show \$100',
+          subtitle: 'Ruby gem',
+          value: model.showHundred,
+          onChanged: model.setShowHundred,
+        ),
+      ],
+    );
+  }
+}
+
+class _ResetButton extends StatelessWidget {
+  const _ResetButton({required this.onPressed});
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      key: const Key('reset'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.redAccent,
+        side: const BorderSide(color: Colors.redAccent),
+      ),
+      icon: const Icon(Icons.restart_alt),
+      label: const Text('Reset all progress'),
+      onPressed: onPressed,
+    );
   }
 }
 
