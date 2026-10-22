@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../denominations.dart';
 import 'coin_painter.dart';
 
 /// A continuously spinning coin. [period] is one full Y-axis turn.
@@ -13,7 +14,11 @@ class SpinningCoin extends StatefulWidget {
     this.period = const Duration(milliseconds: 1400),
     this.spin = true,
     this.sparkles = false,
+    this.denomination = defaultCoin,
   });
+
+  /// Which coin (or gem) to draw. Defaults to the gold coin.
+  final Denomination denomination;
 
   final double size;
   final Duration period;
@@ -66,7 +71,8 @@ class _SpinningCoinState extends State<SpinningCoin>
           final v = _c.value;
           final coin = CustomPaint(
             size: Size.square(widget.size),
-            painter: CoinPainter(
+            painter: painterFor(
+              widget.denomination,
               angle: widget.spin ? v * 2 * math.pi : 0.35,
               glint: (v * 1.5) % 1.0,
             ),
@@ -80,7 +86,11 @@ class _SpinningCoinState extends State<SpinningCoin>
                 coin,
                 Positioned.fill(
                   child: CustomPaint(
-                    painter: SparklePainter(t: v, points: _sparkles),
+                    painter: SparklePainter(
+                      t: v,
+                      points: _sparkles,
+                      tint: widget.denomination.metal,
+                    ),
                   ),
                 ),
               ],

@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import '../../game/progress.dart';
 import '../../state/savings_model.dart';
 import '../palette.dart';
-import '../widgets/reminder_picker.dart';
 import 'home_screen.dart' show money;
 
 class TrophiesScreen extends StatelessWidget {
@@ -68,67 +67,10 @@ class TrophiesScreen extends StatelessWidget {
               ],
             ),
           ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    '⏰ Reminders (7 pm)',
-                    style: TextStyle(
-                      color: Palette.gold,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ReminderPicker(
-                    value: model.reminder,
-                    onChanged: (f) => applyReminder(context, f),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: TextButton(
-                onPressed: () => _confirmReset(context, model),
-                child: const Text(
-                  'Reset all progress',
-                  style: TextStyle(color: Colors.white38),
-                ),
-              ),
-            ),
-          ),
+          const SliverToBoxAdapter(child: SizedBox(height: 24)),
         ],
       ),
     );
-  }
-
-  Future<void> _confirmReset(BuildContext context, SavingsModel model) async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Reset everything?'),
-        content: const Text(
-          'This deletes your savings history, streaks and badges on this device.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(c, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(c, true),
-            child: const Text('Reset'),
-          ),
-        ],
-      ),
-    );
-    if (ok == true) await model.reset();
   }
 }
 

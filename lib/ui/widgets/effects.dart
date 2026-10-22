@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../palette.dart';
+import '../denominations.dart';
 import 'coin_painter.dart';
 
 /// Number that rolls smoothly to its new value (slot-machine feel).
@@ -41,7 +41,10 @@ class FlyingCoin extends StatefulWidget {
     required this.onArrive,
     this.delay = Duration.zero,
     this.size = 64,
+    this.denomination = defaultCoin,
   });
+
+  final Denomination denomination;
 
   final Offset from;
   final Offset to;
@@ -99,7 +102,11 @@ class _FlyingCoinState extends State<FlyingCoin>
               opacity: _c.value == 0 ? 0 : 1,
               child: CustomPaint(
                 size: Size.square(s),
-                painter: CoinPainter(angle: _c.value * 6 * math.pi, glint: t),
+                painter: painterFor(
+                  widget.denomination,
+                  angle: _c.value * 6 * math.pi,
+                  glint: t,
+                ),
               ),
             ),
           ),
@@ -119,7 +126,10 @@ class CoinBurst extends StatefulWidget {
     required this.at,
     required this.label,
     required this.onDone,
+    this.metal = Metals.gold,
   });
+
+  final Metal metal;
 
   final Offset at;
   final String label;
@@ -157,7 +167,7 @@ class _CoinBurstState extends State<CoinBurst>
         child: AnimatedBuilder(
           animation: _c,
           builder: (context, _) => CustomPaint(
-            painter: _BurstPainter(_c.value, widget.at, _parts),
+            painter: _BurstPainter(_c.value, widget.at, _parts, widget.metal),
             child: Stack(
               children: [
                 Positioned(
@@ -172,13 +182,16 @@ class _CoinBurstState extends State<CoinBurst>
                     child: Text(
                       widget.label,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 36,
                         fontWeight: FontWeight.w900,
-                        color: Palette.goldLight,
+                        color: widget.metal.light,
                         shadows: [
-                          Shadow(color: Palette.outline, offset: Offset(2, 3)),
-                          Shadow(color: Palette.goldDeep, blurRadius: 12),
+                          Shadow(
+                            color: widget.metal.outline,
+                            offset: const Offset(2, 3),
+                          ),
+                          Shadow(color: widget.metal.deep, blurRadius: 12),
                         ],
                       ),
                     ),
@@ -194,7 +207,8 @@ class _CoinBurstState extends State<CoinBurst>
 }
 
 class _BurstPainter extends CustomPainter {
-  _BurstPainter(this.t, this.at, this.parts);
+  _BurstPainter(this.t, this.at, this.parts, this.metal);
+  final Metal metal;
   final double t;
   final Offset at;
   final List<(double, double)> parts;
@@ -208,14 +222,14 @@ class _BurstPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 10 * (1 - t)
-        ..color = Palette.goldLight.withValues(alpha: (1 - t) * 0.8),
+        ..color = metal.light.withValues(alpha: (1 - t) * 0.8),
     );
     for (final (a, d) in parts) {
       final p = at + Offset(math.cos(a), math.sin(a)) * (d * e + 30);
       canvas.drawCircle(
         p,
         6 * (1 - t) + 1,
-        Paint()..color = Color.lerp(Palette.goldLight, Palette.goldDeep, t)!,
+        Paint()..color = Color.lerp(metal.light, metal.base, t)!,
       );
     }
   }
@@ -242,7 +256,12 @@ class _CoinRainState extends State<CoinRain>
   final _rnd = math.Random(7);
   late final _coins = List.generate(
     widget.count,
-    (_) => (_rnd.nextDouble(), _rnd.nextDouble(), 18 + _rnd.nextDouble() * 22),
+    (i) => (
+      _rnd.nextDouble(),
+      _rnd.nextDouble(),
+      18 + _rnd.nextDouble() * 22,
+      denominations[i % denominations.length],
+    ),
   );
 
   @override
@@ -260,13 +279,14 @@ class _CoinRainState extends State<CoinRain>
             animation: _c,
             builder: (context, _) => Stack(
               children: [
-                for (final (x, phase, s) in _coins)
+                for (final (x, phase, s, d) in _coins)
                   Positioned(
                     left: x * box.maxWidth,
                     top: ((_c.value + phase) % 1.0) * (box.maxHeight + 60) - 60,
                     child: CustomPaint(
                       size: Size.square(s),
-                      painter: CoinPainter(
+                      painter: painterFor(
+                        d,
                         angle: (_c.value * 4 + phase * 6) * math.pi,
                         glint: phase,
                       ),

@@ -96,4 +96,62 @@ void main() {
     expect(model.progress.checkedInToday, isTrue);
     expect(find.text('DAILY BONUS!'), findsOneWidget);
   });
+
+  testWidgets('all six denominations are in the picker', (tester) async {
+    final repo = InMemorySavingsRepository()
+      ..habit = 'Smoking'
+      ..reminder = 'never';
+    await pumpApp(tester, repo: repo);
+    for (final d in [1, 5, 10, 20, 50, 100]) {
+      expect(find.byKey(Key('amount-$d')), findsOneWidget);
+    }
+  });
+
+  testWidgets('ruby banks \$100 and flies to the counter', (tester) async {
+    final repo = InMemorySavingsRepository()
+      ..habit = 'Smoking'
+      ..reminder = 'never';
+    final model = await pumpApp(tester, repo: repo);
+    await tester.tap(find.byKey(const Key('amount-100')));
+    await tester.pump();
+    expect(find.text('TAP TO BANK \$100'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('hero-coin')));
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(model.progress.total, 100);
+    expect(model.progress.coins, 100);
+  });
+
+  testWidgets('settings toggles hide \$50 and \$100 from the picker', (
+    tester,
+  ) async {
+    final repo = InMemorySavingsRepository()
+      ..habit = 'Smoking'
+      ..reminder = 'never';
+    final model = await pumpApp(tester, repo: repo);
+    await tester.tap(find.byKey(const Key('amount-50')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('settings')));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.text('Settings'), findsOneWidget);
+    expect(find.text('⏰ Reminders (7 pm)'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('toggle-50')));
+    await tester.tap(find.byKey(const Key('toggle-100')));
+    await tester.pump();
+    expect(model.showFifty, isFalse);
+    expect(model.showHundred, isFalse);
+    expect(repo.flags, {'show50': false, 'show100': false});
+    await tester.pageBack();
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(find.byKey(const Key('amount-50')), findsNothing);
+    expect(find.byKey(const Key('amount-100')), findsNothing);
+    expect(find.byKey(const Key('amount-20')), findsOneWidget);
+    // Selection falls back to the largest visible coin.
+    expect(find.text('TAP TO BANK \$20'), findsOneWidget);
+  });
 }

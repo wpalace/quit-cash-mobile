@@ -18,6 +18,10 @@ abstract class SavingsRepository {
   /// Reminder frequency name (see ReminderFrequency); null = never asked.
   Future<String?> loadReminder();
   Future<void> saveReminder(String frequency);
+
+  /// Boolean settings (for example 'show50'); null = never set.
+  Future<bool?> loadFlag(String key);
+  Future<void> saveFlag(String key, bool value);
 }
 
 /// Volatile repository for tests and previews.
@@ -49,4 +53,12 @@ class InMemorySavingsRepository implements SavingsRepository {
 
   @override
   Future<void> saveReminder(String value) async => reminder = value;
+
+  final flags = <String, bool>{};
+
+  @override
+  Future<bool?> loadFlag(String key) async => flags[key];
+
+  @override
+  Future<void> saveFlag(String key, bool value) async => flags[key] = value;
 }

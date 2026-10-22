@@ -54,4 +54,13 @@ class PrefsSavingsRepository implements SavingsRepository {
   @override
   Future<void> saveReminder(String frequency) =>
       _prefs.setString(reminderKey, frequency);
+
+  static String flagKey(String key) => 'quitcash.flag.$key';
+
+  @override
+  Future<bool?> loadFlag(String key) => _prefs.getBool(flagKey(key));
+
+  @override
+  Future<void> saveFlag(String key, bool value) =>
+      _prefs.setBool(flagKey(key), value);
 }

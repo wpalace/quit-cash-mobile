@@ -49,6 +49,8 @@ Follow the steps in sequence. Do not skip steps.
 ## 7. Make the coin animation (optional)
 
 7.1 Run: `flutter test tool/coin_frames_test.dart --dart-define=OUT=/tmp/frames`
+    - Optional: add `--dart-define=DENOM=100` for the ruby (1, 5, 10, 20, 50 also work).
+    - The tool also writes `/tmp/frames/sheet.png` with all denominations.
 7.2 Run: `ffmpeg -framerate 30 -i /tmp/frames/f%03d.png -loop 0 coin-spin.gif`
 
 ## 8. Project map
@@ -60,7 +62,9 @@ Follow the steps in sequence. Do not skip steps.
 | `lib/reminders/` | Reminder frequency, schedule, copy, notification service. |
 | `lib/game/progress.dart` | Pure game rules: dollar-milestone levels, coins, streaks, achievements. |
 | `lib/state/savings_model.dart` | App state (`ChangeNotifier`). Returns celebrations. |
-| `lib/ui/widgets/coin_painter.dart` | The 3D spinning gold coin (CustomPainter). |
+| `lib/ui/denominations.dart` | Denominations ($1–$100), metal color ramps, picker filter. |
+| `lib/ui/widgets/coin_painter.dart` | 3D spinning coins (any metal) and the faceted ruby gem (CustomPainter). |
+| `lib/ui/screens/settings_screen.dart` | Settings: show $50/$100, reminders, reset. |
 | `lib/ui/widgets/effects.dart` | Flying coins, burst, ticking numbers, coin rain. |
 | `lib/ui/screens/` | Onboarding, Bank (home), Trophies. |
 | `test/` | Unit and widget tests. |
@@ -90,7 +94,7 @@ Follow the steps in sequence. Do not skip steps.
 ## 12. Reminders (local notifications)
 
 12.1 Onboarding asks for a frequency: Daily, Every other day, Every three days, Weekly, or Never. Default selection is Daily.
-12.2 The choice is stored on the device (`quitcash.reminder.v1`). The user can change it in Trophies.
+12.2 The choice is stored on the device (`quitcash.reminder.v1`). The user can change it in Settings (gear icon on the Bank screen).
 12.3 Users who finished onboarding before this feature see a one-time prompt on the Bank screen.
 12.4 Reminders go out at 7 pm local time (`reminderHour` in `lib/reminders/reminder_plan.dart`).
 12.5 The app queues the next 14 reminders. It rebuilds the queue at each launch, each check-in and each change.
@@ -100,3 +104,14 @@ Follow the steps in sequence. Do not skip steps.
 12.9 iOS/macOS: the app asks for alert, badge and sound permission.
 12.10 Web and Linux/Windows: the app stores the choice and shows no notifications.
 12.11 To test on a device, select Daily, then put the device clock forward past 7 pm.
+
+## 13. Denominations and Settings
+
+13.1 Denominations: $1 copper, $5 silver, $10 sapphire, $20 emerald, $50 gold, $100 ruby gem.
+13.2 Each denomination uses one `Metal` color ramp (light, base, deep, edge, outline). Coins, gem, sparkles, burst and flying coins use the same ramp.
+13.3 The $100 is a faceted gem (`GemPainter`), not a coin.
+13.4 The HUD counter icon is always the gold coin. Coins are the cosmetic currency.
+13.5 Settings has "Show $50" and "Show $100". Both are on by default. They are stored as `quitcash.flag.show50` and `quitcash.flag.show100`.
+13.6 Hidden denominations go out of the picker only. History, total and level do not change.
+13.7 If the selected denomination becomes hidden, the picker selects the largest visible one below it.
+13.8 Reset all progress is in Settings. Reset does not change settings.

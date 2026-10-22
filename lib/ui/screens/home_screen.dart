@@ -11,9 +11,9 @@ import '../palette.dart';
 import '../widgets/celebration_dialog.dart';
 import '../widgets/effects.dart';
 import '../widgets/reminder_picker.dart';
+import '../denominations.dart';
 import '../widgets/spinning_coin.dart';
-
-const amounts = [1.0, 5.0, 10.0, 20.0];
+import 'settings_screen.dart';
 
 String money(double v) {
   final whole = v.floor();
@@ -65,14 +65,29 @@ class _HomeScreenState extends State<HomeScreen>
   void _removeFx(Key key) =>
       setState(() => _fx.removeWhere((w) => w.key == key));
 
+  /// Denominations shown in the picker (Settings can hide \$50 / \$100).
+  static List<Denomination> _visible(SavingsModel m) =>
+      visibleDenominations(showFifty: m.showFifty, showHundred: m.showHundred);
+
+  /// The selected denomination; falls back to the largest visible one below
+  /// the selection if Settings just hid it.
+  Denomination _selected(SavingsModel m) {
+    final visible = _visible(m);
+    return visible.lastWhere(
+      (d) => d.dollars <= _amount,
+      orElse: () => visible.first,
+    );
+  }
+
   Future<void> _collect(SavingsModel model) async {
+    final denom = _selected(model);
     unawaited(HapticFeedback.mediumImpact());
     unawaited(SystemSound.play(SystemSoundType.click));
     _squash.forward(from: 0);
     final before = model.progress.coins;
     final from = _centerOf(_heroKey);
     final to = _centerOf(_hudCoinKey);
-    final cel = await model.addSavings(_amount);
+    final cel = await model.addSavings(denom.dollars.toDouble());
     if (!mounted) return;
     if (cel == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -89,7 +104,8 @@ class _HomeScreenState extends State<HomeScreen>
         CoinBurst(
           key: bk,
           at: from,
-          label: '+${money(_amount).replaceAll('.00', '')}',
+          label: '+${denom.label}',
+          metal: denom.metal,
           onDone: () => _removeFx(bk),
         ),
       );
@@ -102,6 +118,7 @@ class _HomeScreenState extends State<HomeScreen>
             from: from + Offset((i - flights / 2) * 14.0, 0),
             to: to,
             delay: Duration(milliseconds: 70 * i),
+            denomination: denom,
             onArrive: () {
               HapticFeedback.selectionClick();
               _removeFx(k);
@@ -205,12 +222,13 @@ class _HomeScreenState extends State<HomeScreen>
                             key: _heroKey,
                             size: 190,
                             sparkles: true,
+                            denomination: _selected(model),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'TAP TO BANK ${money(_amount).replaceAll('.00', '')}',
+                            'TAP TO BANK ${_selected(model).label}',
                             style: text.titleMedium?.copyWith(
-                              color: Palette.goldLight,
+                              color: _selected(model).metal.light,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 1.5,
                             ),
@@ -222,10 +240,11 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
               ),
               _AmountPicker(
-                value: _amount,
-                onChanged: (v) {
+                options: _visible(model),
+                value: _selected(model),
+                onChanged: (d) {
                   HapticFeedback.selectionClick();
-                  setState(() => _amount = v);
+                  setState(() => _amount = d.dollars.toDouble());
                 },
               ),
               const SizedBox(height: 12),
@@ -311,6 +330,16 @@ class _Hud extends StatelessWidget {
                   style: label.copyWith(color: Palette.outline),
                 ),
               ),
+              IconButton(
+                key: const Key('settings'),
+                tooltip: 'Settings',
+                icon: const Icon(Icons.settings, color: Colors.white),
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const SettingsScreen(),
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
@@ -374,54 +403,74 @@ class _Pill extends StatelessWidget {
 }
 
 class _AmountPicker extends StatelessWidget {
-  const _AmountPicker({required this.value, required this.onChanged});
-  final double value;
-  final ValueChanged<double> onChanged;
+  const _AmountPicker({
+    required this.options,
+    required this.value,
+    required this.onChanged,
+  });
+  final List<Denomination> options;
+  final Denomination value;
+  final ValueChanged<Denomination> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        for (final a in amounts)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-            child: GestureDetector(
-              key: Key('amount-${a.toInt()}'),
-              onTap: () => onChanged(a),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: 70,
-                height: 52,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: a == value ? Palette.gold : Palette.card,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: a == value ? Palette.outline : Colors.white24,
-                    width: 2,
-                  ),
-                  boxShadow: a == value
-                      ? const [
-                          BoxShadow(
-                            color: Palette.goldDeep,
-                            offset: Offset(0, 4),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(
+        children: [
+          for (final d in options)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: GestureDetector(
+                  key: Key('amount-${d.dollars}'),
+                  onTap: () => onChanged(d),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    height: 76,
+                    decoration: BoxDecoration(
+                      color: d == value
+                          ? d.metal.base.withValues(alpha: 0.35)
+                          : Palette.card,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: d == value ? d.metal.light : Colors.white24,
+                        width: 2,
+                      ),
+                      boxShadow: d == value
+                          ? [
+                              BoxShadow(
+                                color: d.metal.deep,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : null,
+                    ),
+                    padding: const EdgeInsets.all(4),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SpinningCoin(size: 32, spin: false, denomination: d),
+                          const SizedBox(height: 4),
+                          Text(
+                            d.label,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
                           ),
-                        ]
-                      : null,
-                ),
-                child: Text(
-                  '\$${a.toInt()}',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: a == value ? Palette.outline : Colors.white,
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }

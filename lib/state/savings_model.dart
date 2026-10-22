@@ -74,6 +74,29 @@ class SavingsModel extends ChangeNotifier {
     }
   }
 
+  bool _showFifty = true;
+  bool _showHundred = true;
+
+  /// Settings: show the \$50 gold coin / \$100 ruby in the picker.
+  /// Both default to on. Hiding never touches saved history.
+  bool get showFifty => _showFifty;
+  bool get showHundred => _showHundred;
+
+  static const showFiftyKey = 'show50';
+  static const showHundredKey = 'show100';
+
+  Future<void> setShowFifty(bool value) async {
+    _showFifty = value;
+    notifyListeners();
+    await _repo.saveFlag(showFiftyKey, value);
+  }
+
+  Future<void> setShowHundred(bool value) async {
+    _showHundred = value;
+    notifyListeners();
+    await _repo.saveFlag(showHundredKey, value);
+  }
+
   bool get isLoading => _loading;
   bool get loadError => _loadError;
   List<SaveEntry> get entries => _entries;
@@ -84,6 +107,8 @@ class SavingsModel extends ChangeNotifier {
       _entries = await _repo.loadAll();
       _habit = await _repo.loadHabit();
       _reminder = ReminderFrequency.tryParse(await _repo.loadReminder());
+      _showFifty = await _repo.loadFlag(showFiftyKey) ?? true;
+      _showHundred = await _repo.loadFlag(showHundredKey) ?? true;
     } catch (e) {
       debugPrint('QuitCash: load failed: $e');
       _loadError = true;
