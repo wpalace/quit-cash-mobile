@@ -1,0 +1,238 @@
+# Template for consuming projects: copy to .github/workflows/standards-check.yml.
+# Runs only the checks for languages present in the repository.
+# Files listed in .standards-exclude (frozen, e.g. build-fingerprint inputs) are skipped by every check
+# except terraform fmt, which has no exclude option, and flutter analyze, which reads its excludes from
+# the project's analysis_options.yaml (see the Flutter skill's Exceptions section).
+name: Standards check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: standards-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    runs-on: ubuntu-24.04
+    outputs:
+      python: ${{ steps.detect.outputs.python }}
+      bash: ${{ steps.detect.outputs.bash }}
+      powershell: ${{ steps.detect.outputs.powershell }}
+      csharp: ${{ steps.detect.outputs.csharp }}
+      terraform: ${{ steps.detect.outputs.terraform }}
+      docker: ${{ steps.detect.outputs.docker }}
+      flutter: ${{ steps.detect.outputs.flutter }}
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - id: detect
+        name: Detect languages
+        run: |
+          files="$(git ls-files -- ':!:.standards/**')"
+          has() { grep -Eq "$1" <<< "${files}" && echo true || echo false; }
+          {
+            echo "python=$(has '\.pyi?$|(^|/)pyproject\.toml$')"
+            echo "bash=$(has '\.(sh|bash)$')"
+            echo "powershell=$(has '\.(ps1|psm1|psd1)$')"
+            echo "csharp=$(has '\.(cs|csproj|slnx?)$')"
+            echo "terraform=$(has '\.tf$')"
+            echo "docker=$(has '(^|/)(Dockerfile[^/]*|[^/]+\.dockerfile|(docker-)?compose[^/]*\.ya?ml)$')"
+            echo "flutter=$(has '(^|/)pubspec\.yaml$')"
+          } >> "${GITHUB_OUTPUT}"
+
+  python:
+    needs: detect
+    if: needs.detect.outputs.python == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: ruff format --check and ruff check
+        env:
+          RUFF_VERSION: 0.17.1
+        run: |
+          excludes="$(bash .standards/scripts/list-standards-excludes.sh --csv)"
+          args=()
+          if [[ -n "${excludes}" ]]; then
+            args+=(--extend-exclude "${excludes}")
+          fi
+          pipx run "ruff==${RUFF_VERSION}" format --check --diff "${args[@]}" .
+          pipx run "ruff==${RUFF_VERSION}" check --output-format=github "${args[@]}" .
+
+  bash:
+    needs: detect
+    if: needs.detect.outputs.bash == 'true'
+    runs-on: ubuntu-24.04
+    env:
+      SHFMT_VERSION: v3.14.1
+      SHELLCHECK_VERSION: 0.11.0.1
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install shfmt
+        run: |
+          curl -fsSL -o "${RUNNER_TEMP}/shfmt" \
+            "https://github.com/mvdan/sh/releases/download/${SHFMT_VERSION}/shfmt_${SHFMT_VERSION}_linux_amd64"
+          chmod +x "${RUNNER_TEMP}/shfmt"
+          echo "${RUNNER_TEMP}" >> "${GITHUB_PATH}"
+      - name: List shell scripts
+        run: |
+          mapfile -t excludes < <(bash .standards/scripts/list-standards-excludes.sh --pathspec)
+          git ls-files -z -- '*.sh' '*.bash' ':!:.standards/**' "${excludes[@]}" > "${RUNNER_TEMP}/scripts.lst"
+      - name: shfmt -d
+        run: xargs -0 -r shfmt -d -i 2 -ci -bn < "${RUNNER_TEMP}/scripts.lst"
+      - name: shellcheck
+        run: |
+          xargs -0 -r pipx run --spec "shellcheck-py==${SHELLCHECK_VERSION}" shellcheck \
+            < "${RUNNER_TEMP}/scripts.lst"
+
+  powershell:
+    needs: detect
+    if: needs.detect.outputs.powershell == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Invoke-Formatter and Invoke-ScriptAnalyzer
+        shell: pwsh
+        run: |
+          Install-PSResource -Name PSScriptAnalyzer -Version 1.25.0 -Scope CurrentUser -TrustRepository
+          ./.standards/scripts/Test-PowerShellStandard.ps1 -SettingsPath ./PSScriptAnalyzerSettings.psd1
+
+  csharp:
+    needs: detect
+    if: needs.detect.outputs.csharp == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v6.0.0
+        with:
+          dotnet-version: 10.0.x
+      - name: dotnet format --verify-no-changes
+        run: |
+          # Prefer one solution file; otherwise check each project.
+          mapfile -t targets < <(git ls-files -- '*.slnx' '*.sln' | head -n 1)
+          if ((${#targets[@]} == 0)); then
+            mapfile -t targets < <(git ls-files -- '*.csproj')
+          fi
+          mapfile -t excludes < <(bash .standards/scripts/list-standards-excludes.sh)
+          exclude_args=()
+          if ((${#excludes[@]} > 0)); then
+            exclude_args=(--exclude "${excludes[@]}")
+          fi
+          for target in "${targets[@]}"; do
+            dotnet format "${target}" --verify-no-changes --verbosity minimal "${exclude_args[@]}"
+          done
+
+  terraform:
+    needs: detect
+    if: needs.detect.outputs.terraform == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: hashicorp/setup-terraform@v4.0.1
+        with:
+          terraform_version: "~1.16.0"
+          terraform_wrapper: false
+      - uses: terraform-linters/setup-tflint@v6.3.2
+        with:
+          tflint_version: v0.64.0
+      - name: terraform fmt -check -recursive
+        run: terraform fmt -check -recursive -diff
+      - name: tflint
+        env:
+          GITHUB_TOKEN: ${{ github.token }} # avoids rate limits when downloading plugins
+        run: |
+          tflint --init --config "${PWD}/.tflint.hcl"
+          tflint --recursive --config "${PWD}/.tflint.hcl" --format compact --minimum-failure-severity=notice
+
+  flutter:
+    needs: detect
+    if: needs.detect.outputs.flutter == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+          flutter-version: 3.47.x
+          cache: true
+      - name: flutter pub get
+        run: flutter pub get
+      - name: dart format --output=none --set-exit-if-changed
+        run: |
+          mapfile -t excludes < <(bash .standards/scripts/list-standards-excludes.sh --pathspec)
+          git ls-files -z -- '*.dart' ':!:.standards/**' "${excludes[@]}" \
+            | xargs -0 -r dart format --output=none --set-exit-if-changed
+      - name: flutter analyze --fatal-infos
+        run: flutter analyze --fatal-infos
+      - name: flutter test
+        run: |
+          if [[ -d test ]]; then
+            flutter test
+          else
+            echo "No test/ directory; skipping flutter test."
+          fi
+      - name: Analyzer config unchanged
+        # flutter analyze may migrate analysis_options.yaml; fail if it did so the change gets committed.
+        run: git diff --exit-code -- analysis_options.yaml
+
+  docker:
+    needs: detect
+    if: needs.detect.outputs.docker == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: List Dockerfiles and YAML
+        run: |
+          mapfile -t excludes < <(bash .standards/scripts/list-standards-excludes.sh --pathspec)
+          git ls-files -z -- 'Dockerfile*' '*/Dockerfile*' '*.dockerfile' ':!:.standards/**' "${excludes[@]}" \
+            > "${RUNNER_TEMP}/dockerfiles.lst"
+          git ls-files -z -- '*.yaml' '*.yml' ':!:.standards/**' "${excludes[@]}" > "${RUNNER_TEMP}/yaml.lst"
+      - name: hadolint
+        env:
+          HADOLINT_VERSION: v2.15.1
+        run: |
+          curl -fsSL -o "${RUNNER_TEMP}/hadolint" \
+            "https://github.com/hadolint/hadolint/releases/download/${HADOLINT_VERSION}/hadolint-linux-x86_64"
+          chmod +x "${RUNNER_TEMP}/hadolint"
+          xargs -0 -r "${RUNNER_TEMP}/hadolint" --config .hadolint.yaml --format tty < "${RUNNER_TEMP}/dockerfiles.lst"
+      - name: yamllint
+        run: xargs -0 -r pipx run yamllint==1.38.0 -c .yamllint.yaml --format github < "${RUNNER_TEMP}/yaml.lst"
+      - name: docker compose config
+        run: |
+          # Required ${VAR:?} variables need values; fall back to the committed example file.
+          if [[ ! -f .env && -f .env.example ]]; then
+            cp .env.example .env
+          fi
+          # Validate each base file (with its auto-loaded override) and each base + compose.<env>.yaml pair.
+          while IFS= read -r base; do
+            dir="$(dirname -- "${base}")"
+            echo "::group::${base}"
+            (cd -- "${dir}" && docker compose config --quiet) # loads compose.override.yaml too
+            for extra in "${dir}"/compose.*.yaml; do
+              [[ -e "${extra}" && "${extra}" != *.override.yaml ]] || continue
+              docker compose --project-directory "${dir}" --file "${base}" --file "${extra}" config --quiet
+            done
+            echo "::endgroup::"
+          done < <(git ls-files -- '*compose.yaml' '*compose.yml' ':!:.standards/**' \
+            | grep -E '(^|/)(docker-)?compose\.ya?ml$' || true)

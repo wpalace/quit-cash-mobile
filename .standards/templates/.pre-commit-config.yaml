@@ -1,0 +1,95 @@
+# Template for consuming projects: copy to .pre-commit-config.yaml, delete the
+# sections for languages you don't use, then run `pre-commit install`.
+# Hook versions match the CI workflow in standards-check.yml.
+# Frozen files from .standards-exclude must be excluded here too. Generate the pattern with
+#   bash .standards/scripts/list-standards-excludes.sh --regex
+# and add it as another alternative, e.g. exclude: ^(\.standards/.*|runtime/Dockerfile)$
+exclude: ^\.standards/
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+
+  # Python
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.17.1
+    hooks:
+      - id: ruff-check
+      - id: ruff-format
+
+  # Bash
+  - repo: https://github.com/scop/pre-commit-shfmt
+    rev: v3.14.1-1
+    hooks:
+      - id: shfmt
+        args: [--write, -i, "2", -ci, -bn]
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+
+  # Terraform (needs terraform and tflint on PATH)
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.109.2
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_tflint
+        args:
+          - --args=--config=__GIT_WORKING_DIR__/.tflint.hcl
+          - --args=--minimum-failure-severity=notice
+
+  # Docker and Compose
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.15.1
+    hooks:
+      - id: hadolint-docker
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.38.0
+    hooks:
+      - id: yamllint
+        args: [-c, .yamllint.yaml]
+
+  # Flutter and Dart (needs the Flutter SDK on PATH). flutter test runs on pre-push only.
+  - repo: local
+    hooks:
+      - id: dart-format
+        name: dart format
+        language: system
+        files: \.dart$
+        entry: dart format --output=none --set-exit-if-changed
+      - id: flutter-analyze
+        name: flutter analyze
+        language: system
+        files: (\.dart|pubspec\.yaml|analysis_options\.yaml)$
+        pass_filenames: false
+        entry: flutter analyze --fatal-infos
+      - id: flutter-test
+        name: flutter test
+        language: system
+        files: (\.dart|pubspec\.yaml)$
+        pass_filenames: false
+        stages: [pre-push]
+        entry: flutter test
+
+  # PowerShell and C# (need pwsh with PSScriptAnalyzer, and the .NET 10 SDK, on PATH)
+  - repo: local
+    hooks:
+      - id: psscriptanalyzer
+        name: PSScriptAnalyzer
+        language: system
+        files: \.(ps1|psm1|psd1)$
+        entry: >-
+          pwsh -NoProfile -File .standards/scripts/Test-PowerShellStandard.ps1
+          -SettingsPath ./PSScriptAnalyzerSettings.psd1
+      - id: dotnet-format
+        name: dotnet format
+        language: system
+        files: \.cs$
+        pass_filenames: false
+        entry: dotnet format --verify-no-changes --verbosity minimal

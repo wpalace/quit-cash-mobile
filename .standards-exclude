@@ -1,0 +1,7 @@
+# Frozen files skipped by dart format in CI and pre-commit.
+# One path or glob per line, each with a required "# reason".
+# Mirror any Dart entry under analyzer.exclude in analysis_options.yaml.
+#
+# None at present: the project has no generated or fingerprinted Dart files.
+# Generated platform registrants (android/ ios/ linux/ macos/ windows/ web/)
+# are not Dart and are already excluded from analysis by the house config.

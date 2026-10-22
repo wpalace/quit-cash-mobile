@@ -1,0 +1,45 @@
+# Managed by coding-standards (scripts/sync-standards.sh).
+# Do not edit in projects; change it upstream.
+# House standard v1.2.0 - Flutter 3.47 / Dart 3.13.
+# Projects with frozen files own the root file instead: include this one and
+# add analyzer.exclude entries (see SKILL.md, Exceptions).
+include: package:flutter_lints/flutter.yaml
+# Alternative: include: package:very_good_analysis/analysis_options.yaml
+
+formatter:
+  page_width: 80
+
+analyzer:
+  language:
+    strict-inference: true
+    # Dart < 3.13 only. Superseded (not deprecated) by the
+    # no_dynamic_casts / no_raw_types lints:
+    # strict-casts: true
+    # strict-raw-types: true
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    # Flutter 3.47 adds these to the root file on first run if missing; listing
+    # them keeps the managed file byte-stable.
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+  errors:
+    use_build_context_synchronously: error
+    unawaited_futures: error
+
+linter:
+  rules:
+    no_dynamic_casts: true
+    no_raw_types: true
+    avoid_print: true
+    unawaited_futures: true
+    use_build_context_synchronously: true
+    prefer_const_constructors: true
+    prefer_single_quotes: true
+    always_declare_return_types: true
+    directives_ordering: true

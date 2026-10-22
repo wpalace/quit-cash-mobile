@@ -1,0 +1,36 @@
+# From .standards/templates/.pre-commit-config.yaml (v1.2.0), trimmed to the
+# languages in this repo (Flutter/Dart). Run `pre-commit install` once.
+# .standards-exclude is empty, so no extra exclude pattern is needed.
+exclude: ^\.standards/
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+
+  # Flutter and Dart (needs the Flutter SDK on PATH). flutter test runs on pre-push only.
+  - repo: local
+    hooks:
+      - id: dart-format
+        name: dart format
+        language: system
+        files: \.dart$
+        entry: dart format --output=none --set-exit-if-changed
+      - id: flutter-analyze
+        name: flutter analyze
+        language: system
+        files: (\.dart|pubspec\.yaml|analysis_options\.yaml)$
+        pass_filenames: false
+        entry: flutter analyze --fatal-infos
+      - id: flutter-test
+        name: flutter test
+        language: system
+        files: (\.dart|pubspec\.yaml)$
+        pass_filenames: false
+        stages: [pre-push]
+        entry: flutter test

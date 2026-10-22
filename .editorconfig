@@ -1,0 +1,18 @@
+root = true
+
+# BEGIN coding-standards (managed by sync-standards.sh)
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.md]
+trim_trailing_whitespace = false
+
+# dart format reads page_width from analysis_options.yaml; this keeps editors in step.
+[*.dart]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+# END coding-standards

@@ -1,0 +1,34 @@
+# AGENTS.md
+
+Instructions for every AI coding agent working in this repository (Cursor, Claude Code, Copilot, Codex, Grok, and others).
+
+## Coding standards
+
+This project follows the house coding standards, vendored at `.standards/` (pinned in `.standards-version`). Languages used here:
+
+- flutter: `.standards/skills/flutter/SKILL.md`
+
+## Rules
+
+1. **Load the matching skill before editing.** Before you create or change a file in one of these languages, read its `SKILL.md` above and follow it. If a file mixes languages (for example a Dockerfile that runs a shell script), load each skill involved.
+2. **Run the checks before declaring done.** Run the format and lint commands from the skill's Formatting section (or `pre-commit run --all-files`) and fix every finding. Never say a task is complete while a check fails. If a check cannot run here, say so explicitly.
+3. **Keep reformatting and logic changes in separate commits.** Commit formatter-only changes on their own first, then the behavior change.
+4. **Don't edit `.standards/` or managed configs** (`ruff.toml`, `.tflint.hcl`, `.hadolint.yaml`, `.yamllint.yaml`, `PSScriptAnalyzerSettings.psd1`, `analysis_options.yaml` when it carries the managed header, or the managed block in `.editorconfig`). They are overwritten by `.standards/scripts/sync-standards.sh`. Propose changes upstream in the standards repo instead.
+5. **Exceptions must be declared.** Use only the exceptions listed in a skill's Exceptions section. Each one needs a justification comment at the code or config it affects and an entry under "Declared exceptions" below. Files in `.standards-exclude` are frozen, so don't edit or reformat them.
+6. **Project rules win on conflict.** Anything in the project-specific section below overrides the shared standard.
+
+## Running the project
+
+`MAKE.md` is the entry point for building, testing, and running this project. Read it before running commands, and use the commands it documents rather than guessing.
+
+## Declared exceptions
+
+<!-- One line each, e.g.:
+- Terraform: lab/single-operator project; required_version ">= 1.5" and local state (operator hosts run 1.13).
+- Flutter: lib/src/legacy_codec.dart is frozen (.standards-exclude) and excluded in our own analysis_options.yaml.
+- PowerShell: guest/*.ps1 target Windows PowerShell 5.1 (#Requires -Version 5.1) because they run inside the VMs.
+-->
+
+## Project-specific notes
+
+<!-- Add project-specific conventions here. Keep it short. -->

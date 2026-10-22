@@ -1,0 +1,5 @@
+# dart format reads page_width from analysis_options.yaml; this keeps editors in step.
+[*.dart]
+indent_style = space
+indent_size = 2
+max_line_length = 80

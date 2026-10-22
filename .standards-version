@@ -1,0 +1,4 @@
+# Pinned coding-standards release. Updated by sync-standards.sh --upgrade.
+STANDARDS_REPO=https://github.com/wpalace/coding-standards.git
+STANDARDS_REF=v1.2.0
+STANDARDS_LANGUAGES=flutter

@@ -1,0 +1,13 @@
+# Add to the project's pyproject.toml. Ruff reads the root ruff.toml installed by
+# sync-standards.sh, which takes precedence over [tool.ruff] here, so do not
+# duplicate Ruff settings in pyproject.toml.
+[project]
+# Default for new projects. Existing projects may use an older supported floor (">=3.12" suggested);
+# Ruff reads this value as its target version, so don't set target-version anywhere else.
+requires-python = ">=3.14"
+
+[dependency-groups]
+dev = ["mypy", "pytest", "ruff==0.17.*"]
+
+[tool.mypy]
+strict = true
