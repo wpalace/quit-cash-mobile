@@ -73,7 +73,11 @@ class SavingsViewModel extends ChangeNotifier {
     final f = _reminder;
     if (f == null) return;
     final p = progress;
-    await _reminders.schedule(f, streak: p.currentStreak, coins: p.coins);
+    await _reminders.schedule(
+      f,
+      streak: p.currentStreak,
+      dollars: p.totalCents ~/ 100,
+    );
   }
 
   bool _showFifty = false;
@@ -168,7 +172,7 @@ class SavingsViewModel extends ChangeNotifier {
         false;
     _loading = false;
     notifyListeners();
-    // Refresh the queued batch (and its streak/coin copy) on every launch.
+    // Refresh the queued batch (and its dollar copy) on every launch.
     await _reschedule();
   }
 
@@ -185,12 +189,6 @@ class SavingsViewModel extends ChangeNotifier {
     );
   }
 
-  /// Daily check-in. Returns null if already done today.
-  Future<Celebration?> checkIn() async {
-    if (progress.checkedInToday) return null;
-    return _record(SaveEntry(kind: EntryKind.checkIn, cents: 0, at: _clock()));
-  }
-
   Future<Celebration?> _record(SaveEntry e) async {
     final before = progress;
     if (await _repo.append(e) case Error(:final error)) {
@@ -199,7 +197,8 @@ class SavingsViewModel extends ChangeNotifier {
     }
     _entries = [..._entries, e];
     notifyListeners();
-    if (e.kind == EntryKind.checkIn) unawaited(_reschedule());
+    // Reminder copy quotes the total, so refresh it.
+    unawaited(_reschedule());
     final after = progress;
     final newIds = after.unlocked.difference(before.unlocked);
     return Celebration(

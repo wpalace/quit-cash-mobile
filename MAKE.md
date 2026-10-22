@@ -97,9 +97,11 @@ Follow the steps in sequence. Do not skip steps.
 11.2 Level 0 ("Starter") is before the first $1.
 11.3 Thresholds: L1 $1, L2 $20, L3 $50, L4 $100, L5 $200, L6 $500, L7 $1000.
 11.4 After L7, each additional $1000 gives one level ($2000 = L8, $3000 = L9).
-11.5 Coins are cosmetic. A save gives 1 coin per $1. A daily check-in gives 5 coins.
-11.6 Coins do not add to total saved and do not change the level.
-11.7 A save or a check-in on a day keeps the streak alive.
+11.5 The app tracks one thing: dollars saved. There is no daily check-in, bonus, coin currency or XP.
+11.6 Badges are dollar milestones: $1, $10, $25, $50, $100, Level 5 ($200), $1000 (plus streak badges, see 11.7).
+11.7 A save on a day keeps the streak alive.
+11.8 The top-bar counter shows total dollars saved. It rolls up as the flying coins land.
+11.9 Old data may contain daily check-in rows (`"k": "checkIn"`). They are skipped on load (`SaveEntry.tryFromJson`) and dropped at the next save. They never counted as dollars.
 
 ## 12. Reminders (local notifications)
 
@@ -107,7 +109,7 @@ Follow the steps in sequence. Do not skip steps.
 12.2 The choice is stored on the device (`quitcash.reminder.v1`). The user can change it in Settings (gear icon on the Bank screen).
 12.3 Users who finished onboarding before this feature see a one-time prompt on the Bank screen.
 12.4 Reminders go out at 7 pm local time (`reminderHour` in `lib/reminders/reminder_plan.dart`).
-12.5 The app queues the next 14 reminders. It rebuilds the queue at each launch, each check-in and each change.
+12.5 The app queues the next 14 reminders. It rebuilds the queue at each launch, each save and each change. The copy quotes the total dollars saved.
 12.6 The app asks for notification permission only when the user selects an option that is not Never.
 12.7 Android: `POST_NOTIFICATIONS` (Android 13+) and `RECEIVE_BOOT_COMPLETED` are in the manifest. The app uses inexact alarms, so it does not need `SCHEDULE_EXACT_ALARM`.
 12.8 Android: core library desugaring is on in `android/app/build.gradle.kts`. Do not remove it.
@@ -120,7 +122,7 @@ Follow the steps in sequence. Do not skip steps.
 13.1 Denominations: $1 copper, $5 silver, $10 gold, $20 emerald, $50 sapphire, $100 ruby gem, $500 diamond gem.
 13.2 Each denomination uses one `Metal` color ramp (light, base, deep, edge, outline). Coins, gem, sparkles, burst and flying coins use the same ramp.
 13.3 The $100 is a cushion-cut ruby (`GemPainter`) and the $500 is a round brilliant diamond (`DiamondPainter`: icy white/blue facets, rainbow fire glints). `Denomination.cut` (`Cut.coin`, `Cut.cushion`, `Cut.brilliant`) selects the painter in `painterFor`. Both gems use the same tap, burst and fly-to-counter flow as the coins.
-13.4 The HUD counter icon is always the gold ($10) coin. Coins are the cosmetic currency.
+13.4 The top-bar counter icon is always the gold ($10) coin.
 13.5 Settings has "Show $50", "Show $100" and "Show $500". All are OFF by default (opt-in). They are stored as `quitcash.flag.show50`, `quitcash.flag.show100` and `quitcash.flag.show500`.
 13.6 Hidden denominations go out of the picker only. History, total and level do not change.
 13.7 If the selected denomination becomes hidden, the picker selects the largest visible one below it.

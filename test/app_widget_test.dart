@@ -61,7 +61,8 @@ void main() {
     expect(model.habit, 'Vaping');
     expect(model.reminder, ReminderFrequency.daily);
     expect(find.text('TOTAL SAVED'), findsOneWidget);
-    expect(find.text('\$0.00'), findsOneWidget);
+    expect(find.text('\$0.00'), findsNWidgets(2)); // header + top bar
+    expect(find.byKey(const Key('daily-bonus')), findsNothing);
   });
 
   testWidgets('tapping the coin banks money, flies coins, celebrates', (
@@ -79,24 +80,23 @@ void main() {
     for (var i = 0; i < 20; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
-    expect(find.text('\$20.00'), findsOneWidget);
+    expect(
+      tester
+          .widget<Text>(
+            find.descendant(
+              of: find.byKey(const Key('hud-total')),
+              matching: find.byType(Text),
+            ),
+          )
+          .data,
+      '\$20.00',
+    );
     expect(find.text('LEVEL UP!'), findsOneWidget);
     await tester.tap(find.text('AWESOME'));
     for (var i = 0; i < 6; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.text('LEVEL UP!'), findsNothing);
-  });
-
-  testWidgets('daily bonus can be claimed once', (tester) async {
-    final repo = InMemorySavingsRepository()
-      ..habit = 'Smoking'
-      ..reminder = 'daily';
-    final model = await pumpApp(tester, repo: repo);
-    await tester.tap(find.byKey(const Key('daily-bonus')));
-    await tester.pump(const Duration(milliseconds: 600));
-    expect(model.progress.checkedInToday, isTrue);
-    expect(find.text('DAILY BONUS!'), findsOneWidget);
   });
 
   testWidgets('default picker hides \$50 and \$100', (tester) async {
@@ -136,7 +136,6 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(model.progress.total, 100);
-    expect(model.progress.coins, 100);
   });
 
   testWidgets('diamond is off by default and banks \$500', (tester) async {
@@ -169,7 +168,6 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(model.progress.total, 500);
-    expect(model.progress.coins, 500);
   });
 
   testWidgets('settings toggles hide \$50 and \$100 from the picker', (

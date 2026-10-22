@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quit_cash_mobile/data/repositories/in_memory_savings_repository.dart';
 import 'package:quit_cash_mobile/data/repositories/prefs_savings_repository.dart';
@@ -16,15 +18,13 @@ void main() {
     final repo = PrefsSavingsRepository();
     final at = DateTime(2026, 1, 2, 3, 4);
     await repo.append(SaveEntry(kind: EntryKind.save, cents: 500, at: at));
-    await repo.append(SaveEntry(kind: EntryKind.checkIn, cents: 0, at: at));
     await repo.saveHabit('Vaping');
 
     final again = PrefsSavingsRepository();
     final rows = (await again.loadAll()).valueOrNull ?? const [];
-    expect(rows, hasLength(2));
+    expect(rows, hasLength(1));
     expect(rows.first.cents, 500);
     expect(rows.first.at, at);
-    expect(rows.last.kind, EntryKind.checkIn);
     expect((await again.loadHabit()).valueOrNull, 'Vaping');
 
     await again.clear();
@@ -43,9 +43,29 @@ void main() {
     final second = await model.addSavings(1);
     expect(second?.isEmpty, isTrue);
     expect(model.progress.total, 11);
-    expect(await model.checkIn(), isNotNull);
-    expect(await model.checkIn(), isNull);
   });
+
+  test(
+    'old data with daily check-ins still loads; check-ins are ignored',
+    () async {
+      final at = DateTime(2026, 1, 2).millisecondsSinceEpoch;
+      SharedPreferencesAsyncPlatform.instance =
+          InMemorySharedPreferencesAsync.withData({
+            PrefsSavingsRepository.storageKey: jsonEncode([
+              {'k': 'save', 'c': 500, 't': at},
+              {'k': 'checkIn', 'c': 0, 't': at},
+              {'k': 'save', 'c': 2000, 't': at},
+            ]),
+          });
+      final repo = PrefsSavingsRepository();
+      final rows = (await repo.loadAll()).valueOrNull ?? const [];
+      expect(rows.map((r) => r.cents), [500, 2000]);
+      final model = SavingsViewModel(repository: repo);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(model.progress.total, 25);
+      expect(model.progress.level, 2);
+    },
+  );
 
   test('model rejects invalid amounts', () async {
     final model = SavingsViewModel(repository: InMemorySavingsRepository());

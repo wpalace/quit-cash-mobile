@@ -33,8 +33,8 @@ class _HomeScreenState extends State<HomeScreen>
   double _amount = 5;
   int _fxId = 0;
 
-  /// Coins shown in the HUD lag the model until the flying coins land.
-  int? _displayCoins;
+  /// Dollars shown in the HUD lag the model until the flying coins land.
+  double? _displayTotal;
   bool _hudBump = false;
   bool _reminderPrompted = false;
 
@@ -64,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen>
     unawaited(HapticFeedback.mediumImpact());
     unawaited(SystemSound.play(SystemSoundType.click));
     _squash.forward(from: 0);
-    final before = model.progress.coins;
+    final before = model.progress.total;
     final from = _centerOf(_heroKey);
     final to = _centerOf(_hudCoinKey);
     final cel = await model.addSavings(denom.dollars.toDouble());
@@ -75,10 +75,10 @@ class _HomeScreenState extends State<HomeScreen>
       );
       return;
     }
-    final gained = model.progress.coins - before;
-    final flights = math.min(gained, 8);
+    final gained = model.progress.total - before;
+    final flights = math.min(denom.dollars, 8);
     setState(() {
-      _displayCoins = before;
+      _displayTotal = before;
       final bk = ValueKey('b${_fxId++}');
       _fx.add(
         CoinBurst(
@@ -104,9 +104,9 @@ class _HomeScreenState extends State<HomeScreen>
               _removeFx(k);
               setState(() {
                 _hudBump = true;
-                _displayCoins = last
+                _displayTotal = last
                     ? null
-                    : before + ((i + 1) * gained ~/ flights);
+                    : before + gained * (i + 1) / flights;
               });
               Future.delayed(
                 const Duration(milliseconds: 120),
@@ -122,13 +122,6 @@ class _HomeScreenState extends State<HomeScreen>
         if (mounted) unawaited(showCelebration(context, cel));
       });
     }
-  }
-
-  Future<void> _checkIn(SavingsViewModel model) async {
-    unawaited(HapticFeedback.heavyImpact());
-    final cel = await model.checkIn();
-    if (!mounted || cel == null) return;
-    unawaited(showCelebration(context, cel, checkIn: true));
   }
 
   @override
@@ -151,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen>
             children: [
               _Hud(
                 progress: p,
-                coins: _displayCoins ?? p.coins,
+                total: _displayTotal ?? p.total,
                 bump: _hudBump,
                 coinKey: _hudCoinKey,
               ),
@@ -175,8 +168,6 @@ class _HomeScreenState extends State<HomeScreen>
                   setState(() => _amount = d.dollars.toDouble());
                 },
               ),
-              const SizedBox(height: 12),
-              _DailyBonus(done: p.checkedInToday, onTap: () => _checkIn(model)),
               const SizedBox(height: 12),
             ],
           ),
@@ -286,12 +277,12 @@ const _hudLabel = TextStyle(
 class _Hud extends StatelessWidget {
   const _Hud({
     required this.progress,
-    required this.coins,
+    required this.total,
     required this.bump,
     required this.coinKey,
   });
   final Progress progress;
-  final int coins;
+  final double total;
   final bool bump;
   final GlobalKey coinKey;
 
@@ -303,8 +294,20 @@ class _Hud extends StatelessWidget {
         children: [
           Row(
             children: [
-              _CoinCounter(coins: coins, bump: bump, coinKey: coinKey),
-              const Spacer(),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: _DollarCounter(
+                      total: total,
+                      bump: bump,
+                      coinKey: coinKey,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
               _StreakPill(streak: progress.currentStreak),
               const SizedBox(width: 8),
               _Pill(
@@ -325,13 +328,14 @@ class _Hud extends StatelessWidget {
   }
 }
 
-class _CoinCounter extends StatelessWidget {
-  const _CoinCounter({
-    required this.coins,
+/// Top-bar total: dollars saved, rolling up as flying coins land.
+class _DollarCounter extends StatelessWidget {
+  const _DollarCounter({
+    required this.total,
     required this.bump,
     required this.coinKey,
   });
-  final int coins;
+  final double total;
   final bool bump;
   final GlobalKey coinKey;
 
@@ -350,11 +354,10 @@ class _CoinCounter extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 6),
-          Text('× ', style: _hudLabel.copyWith(color: Colors.white70)),
           TickingNumber(
-            key: const Key('coin-count'),
-            value: coins.toDouble(),
-            format: (v) => v.round().toString(),
+            key: const Key('hud-total'),
+            value: total,
+            format: money,
             duration: const Duration(milliseconds: 250),
             style: _hudLabel,
           ),
@@ -547,68 +550,6 @@ class _DenomChip extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _DailyBonus extends StatelessWidget {
-  const _DailyBonus({required this.done, required this.onTap});
-  final bool done;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Material(
-        color: done ? Palette.card : Palette.mint,
-        borderRadius: BorderRadius.circular(18),
-        child: InkWell(
-          key: const Key('daily-bonus'),
-          borderRadius: BorderRadius.circular(18),
-          onTap: done ? null : onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Text(done ? '✅' : '🎁', style: const TextStyle(fontSize: 28)),
-                const SizedBox(width: 12),
-                Expanded(child: _BonusText(done: done)),
-                if (!done)
-                  const Icon(Icons.chevron_right, color: Palette.skyTop),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _BonusText extends StatelessWidget {
-  const _BonusText({required this.done});
-  final bool done;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          done ? 'Daily bonus claimed' : 'Stayed strong today?',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            fontSize: 16,
-            color: done ? Colors.white70 : Palette.skyTop,
-          ),
-        ),
-        Text(
-          done
-              ? 'Come back tomorrow to keep the streak alive'
-              : 'Check in for +$checkInCoins coins and keep your streak',
-          style: TextStyle(color: done ? Colors.white54 : Palette.skyTop),
-        ),
-      ],
     );
   }
 }

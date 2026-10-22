@@ -17,14 +17,20 @@ void main() {
     expect(p.unlocked, isEmpty);
   });
 
-  test('totals and coins derive from saves', () {
+  test('totals and badges derive from dollars saved', () {
     final p = Progress.from([save(5, now), save(20, now)], now: now);
     expect(p.totalCents, 2500);
-    expect(p.coins, 25);
     expect(p.level, 2); // $20 reached, $50 next
     expect(p.nextThreshold, 50);
     expect(p.levelFraction, closeTo(5 / 30, 1e-9));
-    expect(p.unlocked, containsAll(['first', 'ten']));
+    expect(p.unlocked, {'first', 'ten', 'twentyfive'});
+  });
+
+  test('a cents-only save below \$1 unlocks nothing', () {
+    final p = Progress.from([
+      SaveEntry(kind: EntryKind.save, cents: 50, at: now),
+    ], now: now);
+    expect(p.unlocked, isEmpty);
   });
 
   test('streak counts consecutive days and survives until tomorrow', () {
@@ -41,16 +47,6 @@ void main() {
     ], now: now);
     expect(p.currentStreak, 0);
     expect(p.bestStreak, 1);
-  });
-
-  test('check-in grants coins only: no dollars, no level', () {
-    final p = Progress.from([
-      SaveEntry(kind: EntryKind.checkIn, cents: 0, at: now),
-    ], now: now);
-    expect(p.checkedInToday, isTrue);
-    expect(p.coins, checkInCoins);
-    expect(p.level, 0);
-    expect(p.total, 0);
   });
 
   group('dollar milestone levels', () {

@@ -20,7 +20,7 @@ abstract class ReminderService {
   Future<void> schedule(
     ReminderFrequency frequency, {
     required int streak,
-    required int coins,
+    required int dollars,
   });
 }
 
@@ -39,7 +39,7 @@ class NoopReminderService implements ReminderService {
   Future<void> schedule(
     ReminderFrequency frequency, {
     required int streak,
-    required int coins,
+    required int dollars,
   }) async {}
 }
 
@@ -75,7 +75,7 @@ class LocalNotificationReminderService implements ReminderService {
     android: AndroidNotificationDetails(
       'quitcash_reminders',
       'Reminders',
-      channelDescription: 'Streak and daily bonus reminders',
+      channelDescription: 'Savings reminders',
       importance: Importance.defaultImportance,
     ),
     iOS: DarwinNotificationDetails(),
@@ -144,7 +144,7 @@ class LocalNotificationReminderService implements ReminderService {
   Future<void> schedule(
     ReminderFrequency frequency, {
     required int streak,
-    required int coins,
+    required int dollars,
   }) async {
     try {
       await _init();
@@ -152,7 +152,7 @@ class LocalNotificationReminderService implements ReminderService {
       final times = reminderTimes(DateTime.now(), frequency);
       for (var i = 0; i < times.length; i++) {
         final t = times[i];
-        final copy = reminderCopy(i, streak: streak, coins: coins);
+        final copy = reminderCopy(i, streak: streak, dollars: dollars);
         await _plugin.zonedSchedule(
           id: 1000 + i,
           title: copy.title,

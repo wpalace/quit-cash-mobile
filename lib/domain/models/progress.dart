@@ -22,17 +22,13 @@ class Achievement {
 /// one more level (\$2000 = L8, \$3000 = L9, ...). Below \$1 is Level 0.
 const levelThresholds = [1, 20, 50, 100, 200, 500, 1000];
 
-/// Coins awarded for one daily check-in. Coins are a cosmetic currency:
-/// they never add to total saved and never affect level.
-const checkInCoins = 5;
-
 final List<Achievement> achievements = [
   Achievement(
     'first',
     'First Coin',
     'Save your very first dollar',
     '🪙',
-    (p) => p.saveCount >= 1,
+    (p) => p.totalCents >= 100,
   ),
   Achievement(
     'ten',
@@ -84,11 +80,11 @@ final List<Achievement> achievements = [
     (p) => p.bestStreak >= 30,
   ),
   Achievement(
-    'taps25',
-    'Coin Collector',
-    'Collect 25 coins',
+    'twentyfive',
+    'Quarter Stack',
+    'Save \$25 in total',
     '⭐',
-    (p) => p.saveCount >= 25,
+    (p) => p.totalCents >= 2500,
   ),
   Achievement(
     'lvl5',
@@ -104,28 +100,17 @@ DateTime _day(DateTime t) => DateTime(t.year, t.month, t.day);
 class Progress {
   Progress._({
     required this.totalCents,
-    required this.saveCount,
     required this.currentStreak,
     required this.bestStreak,
-    required this.checkedInToday,
-    required this.coins,
   });
 
   factory Progress.from(List<SaveEntry> entries, {DateTime? now}) {
     final today = _day(now ?? DateTime.now());
-    var cents = 0, saves = 0, coins = 0;
-    var checkedIn = false;
+    var cents = 0;
     final days = <DateTime>{};
     for (final e in entries) {
       days.add(_day(e.at));
-      if (e.kind == EntryKind.save) {
-        cents += e.cents;
-        saves++;
-        coins += (e.cents ~/ 100).clamp(1, 1 << 30);
-      } else {
-        coins += checkInCoins;
-        if (_day(e.at) == today) checkedIn = true;
-      }
+      cents += e.cents;
     }
     final sorted = days.toList()..sort();
     var best = 0, run = 0;
@@ -144,22 +129,14 @@ class Progress {
     }
     return Progress._(
       totalCents: cents,
-      saveCount: saves,
       currentStreak: current,
       bestStreak: best,
-      checkedInToday: checkedIn,
-      coins: coins,
     );
   }
 
   final int totalCents;
-  final int saveCount;
   final int currentStreak;
   final int bestStreak;
-  final bool checkedInToday;
-
-  /// Collected coin count shown in the HUD (1 per dollar, min 1 per tap).
-  final int coins;
 
   double get total => totalCents / 100.0;
 

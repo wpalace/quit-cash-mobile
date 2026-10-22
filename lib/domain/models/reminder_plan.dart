@@ -59,32 +59,37 @@ List<DateTime> reminderTimes(
 typedef ReminderCopy = ({String title, String body});
 
 /// On-brand rotating copy. [i] is the reminder's index in the batch.
-ReminderCopy reminderCopy(int i, {required int streak, required int coins}) {
+ReminderCopy reminderCopy(int i, {required int streak, required int dollars}) {
   final lines = <ReminderCopy>[
-    (
-      title: '🪙 Your coins are getting lonely',
-      body: 'You have $coins coins. Skip one craving and grab another!',
-    ),
+    dollars > 0
+        ? (
+            title: '💰 \$$dollars saved so far',
+            body: 'Skip one more craving today and watch it grow.',
+          )
+        : (
+            title: '💰 Your first dollar is waiting',
+            body: 'Skip one craving today and bank what you saved.',
+          ),
     streak > 0
         ? (
             title: '🔥 $streak-day streak on the line!',
-            body: 'Check in now to keep it burning. Bonus coins waiting.',
+            body: 'Bank a saving today to keep it burning.',
           )
         : (
             title: '🔥 Light a new streak today',
-            body: 'One check-in starts the fire. Bonus coins waiting.',
+            body: 'Bank one saving today to start the fire.',
           ),
     (
-      title: '✨ Bling! Daily bonus ready',
-      body: 'Claim your free coins and bank what you saved today.',
+      title: '✨ What did you not spend today?',
+      body: 'Bank it in QuitCash. Every dollar counts.',
     ),
     (
       title: '💪 Craving? Turn it into gold',
-      body: 'Every skip is a coin. Tap to bank it and level up.',
+      body: 'Every skip is money kept. Tap to bank it and level up.',
     ),
     (
-      title: '🏆 A new badge is closer than you think',
-      body: 'Open QuitCash and see how far to your next level.',
+      title: '🏆 Your next milestone is closer than you think',
+      body: 'Open QuitCash and see how many dollars to your next level.',
     ),
   ];
   return lines[i % lines.length];
