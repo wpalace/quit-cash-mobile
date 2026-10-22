@@ -23,12 +23,17 @@ This project follows the house coding standards, vendored at `.standards/` (pinn
 
 ## Declared exceptions
 
-<!-- One line each, e.g.:
-- Terraform: lab/single-operator project; required_version ">= 1.5" and local state (operator hosts run 1.13).
-- Flutter: lib/src/legacy_codec.dart is frozen (.standards-exclude) and excluded in our own analysis_options.yaml.
-- PowerShell: guest/*.ps1 target Windows PowerShell 5.1 (#Requires -Version 5.1) because they run inside the VMs.
--->
+- Flutter: root `analysis_options.yaml` is project-owned (no managed header). It includes `.standards/skills/flutter/analysis_options.yaml` unchanged and only adds stricter rules (`prefer_final_locals`, `sort_child_properties_last`). Reason: keep extra project rules without editing the managed file. `.standards-exclude` is empty (no frozen or generated Dart files).
+- Flutter: one app-wide `SavingsViewModel` is shared by all screens instead of one view model per view. Reason: small app where every screen reads the same savings, progress and settings state; split per feature when screens gain their own state.
+- Flutter: view state uses `isLoading` / `loadError` flags, not a sealed `Loading/Loaded/Failed` class. Reason: load failure still renders the normal UI with an empty history; revisit with the per-feature view model split.
+- Flutter: no crash reporter. `main.dart` routes `FlutterError.onError` and `PlatformDispatcher.instance.onError` to `dart:developer` `log`. Reason: client-only launch with zero infrastructure; replace `_report` when a reporter is chosen. Release symbols from `--split-debug-info` are kept locally, not uploaded.
+- Flutter: no flavors and a single placeholder app ID (`com.example.quit_cash_mobile`). Reason: one environment (no backend) at launch; add `dev`/`prod` flavors with real IDs before store submission.
+- Flutter: `HomeScreen` state `build` (~50 lines) and `CoinBurst.build` (~43 lines) are slightly over the ~40-line guide. Reason: they are a flat list of already-extracted widgets plus the effects overlay; splitting further adds indirection only.
+- Flutter: tests use hand-written fakes (`InMemorySavingsRepository`, `FakeReminders`), not `mocktail`. Reason: fakes are simpler and fully cover the interfaces.
+- Flutter: the denominations golden draws no text, so no fonts are pinned.
 
 ## Project-specific notes
 
-<!-- Add project-specific conventions here. Keep it short. -->
+- Standards are synced from `https://github.com/wpalace/coding-standards.git` (assumed remote; the v1.2.0 tag was synced from a local clone with `STANDARDS_SOURCE`). Correct `.standards-version` if the real remote differs.
+- `MAKE.md` is the entry point. All checks: `dart format --output=none --set-exit-if-changed . && flutter analyze --fatal-infos && flutter test`.
+- End-to-end test: `integration_test/` runs on web with `flutter drive` and a matching `chromedriver` (see MAKE.md 4.6).

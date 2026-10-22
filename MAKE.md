@@ -12,7 +12,7 @@ Follow the steps in sequence. Do not skip steps.
 
 ## 2. Requirements
 
-2.1 Install Flutter SDK, stable channel, Dart 3.10 or later.
+2.1 Install Flutter SDK 3.47 stable (Dart 3.13). The house standard targets this version.
 2.2 Make sure that `flutter` is on `PATH`.
     - Example: `git clone --depth 1 -b stable https://github.com/flutter/flutter.git ~/flutter`
     - Then: `export PATH="$HOME/flutter/bin:$PATH"`
@@ -26,11 +26,16 @@ Follow the steps in sequence. Do not skip steps.
 
 ## 4. Do the checks
 
-4.1 Run: `dart format --output=none --set-exit-if-changed lib test tool`
-4.2 Run: `flutter analyze`
+4.1 Run: `dart format --output=none --set-exit-if-changed .`
+4.2 Run: `flutter analyze --fatal-infos`
 4.3 Make sure that the result is "No issues found".
 4.4 Run: `flutter test`
 4.5 Make sure that the result is "All tests passed".
+4.6 End-to-end (optional, needs Chrome and a matching `chromedriver` on port 4444):
+    - Run: `chromedriver --port=4444 &`
+    - Run: `flutter drive --driver=test_driver/integration_test.dart --target=integration_test/app_flow_test.dart -d web-server --browser-name=chrome --headless`
+4.7 To update the golden image after an intended art change, run: `flutter test --update-goldens test/goldens`.
+4.8 These are the same checks as CI (`.github/workflows/standards-check.yml`) and pre-commit (`.pre-commit-config.yaml`).
 
 ## 5. Run the app
 
@@ -42,8 +47,9 @@ Follow the steps in sequence. Do not skip steps.
 ## 6. Build release artifacts
 
 6.1 Web: `flutter build web --release`. Output: `build/web/`.
-6.2 Android: `flutter build appbundle --release`. Output: `build/app/outputs/bundle/release/`.
-6.3 iOS (macOS only): `flutter build ipa --release`.
+6.2 Android: `flutter build appbundle --release --obfuscate --split-debug-info=build/symbols`. Output: `build/app/outputs/bundle/release/`.
+6.3 iOS (macOS only): `flutter build ipa --release --obfuscate --split-debug-info=build/symbols`.
+6.5 Keep `build/symbols/` for each release. You need it to read obfuscated stack traces.
 6.4 CAUTION: Android release signing and iOS signing are not configured yet.
 
 ## 7. Make the coin animation (optional)
@@ -57,27 +63,31 @@ Follow the steps in sequence. Do not skip steps.
 
 | Path | Purpose |
 |------|---------|
-| `lib/main.dart` | Entry point. Selects the repository. |
-| `lib/data/` | `SavingsRepository` seam, on-device and in-memory implementations. |
-| `lib/reminders/` | Reminder frequency, schedule, copy, notification service. |
-| `lib/game/progress.dart` | Pure game rules: dollar-milestone levels, coins, streaks, achievements. |
-| `lib/state/savings_model.dart` | App state (`ChangeNotifier`). Returns celebrations. |
-| `lib/ui/denominations.dart` | Denominations ($1–$100), metal color ramps, picker filter. |
-| `lib/ui/widgets/coin_painter.dart` | 3D spinning coins (any metal) and the faceted ruby gem (CustomPainter). |
-| `lib/ui/screens/settings_screen.dart` | Settings: show $50/$100, reminders, reset. |
-| `lib/ui/widgets/effects.dart` | Flying coins, burst, ticking numbers, coin rain. |
-| `lib/ui/screens/` | Onboarding, Bank (home), Trophies. |
-| `test/` | Unit and widget tests. |
+| `lib/main.dart` | Entry point. Selects the repository. Installs global error handlers. |
+| `lib/domain/models/` | Immutable models and pure rules: `save_entry`, `progress` (levels, streaks, achievements), `reminder_plan`. |
+| `lib/data/repositories/` | `SavingsRepository` interface (returns `Result<T>`), on-device (`prefs_`) and `in_memory_` implementations. |
+| `lib/data/services/reminder_service.dart` | Local notification service (no-op on web). |
+| `lib/utils/` | `Result<T>` (`Ok`/`Error`) and `money()` formatting. |
+| `lib/ui/core/view_models/savings_view_model.dart` | App-wide view model (`ChangeNotifier`). Returns celebrations. |
+| `lib/ui/core/themes/` | Palette, denominations and metal color ramps, picker filter. |
+| `lib/ui/core/widgets/` | Shared widgets: coin and gem painters, spinning coin, flying coin, burst, coin rain, ticking number, reminder picker, celebration dialog, backdrop. |
+| `lib/ui/app/`, `lib/ui/home/`, `lib/ui/onboarding/`, `lib/ui/trophies/`, `lib/ui/settings/` | App shell and one folder per screen. |
+| `test/` | Unit, widget and golden (`test/goldens/`) tests. |
+| `integration_test/`, `test_driver/` | End-to-end flow (MAKE.md 4.6). |
+| `.standards/`, `.standards-version`, `.standards-exclude`, `AGENTS.md` | House coding standard (vendored, do not edit). |
 
 ## 9. Add a backend later
 
-9.1 Write a new class that implements `SavingsRepository`.
+9.1 Write a new class in `lib/data/repositories/` that implements `SavingsRepository`. Return `Ok`/`Error`; do not throw.
 9.2 Change the repository in `lib/main.dart`.
 9.3 Do not change the UI or the game rules. They use only the interface.
 
 ## 10. Rules
 
-10.1 Use idiomatic Dart lints (`analysis_options.yaml`).
+10.1 Follow the house Flutter standard: `.standards/skills/flutter/SKILL.md` (v1.2.0, pinned in `.standards-version`). Read `AGENTS.md` first.
+10.4 Do not edit `.standards/`. To update it, run `bash .standards/scripts/sync-standards.sh` (set `STANDARDS_SOURCE=<local clone>` if offline).
+10.5 Keep `dart format` changes in their own commit.
+10.6 Record each deviation under "Declared exceptions" in `AGENTS.md`.
 10.2 Keep `flutter analyze` and `flutter test` clean before each commit.
 10.3 Do not add copyrighted game assets. All coin art is drawn in code.
 
