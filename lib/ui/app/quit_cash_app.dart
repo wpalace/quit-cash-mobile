@@ -7,6 +7,7 @@ import 'package:quit_cash_mobile/ui/core/widgets/spinning_coin.dart';
 import 'package:quit_cash_mobile/ui/goals/goals_screen.dart';
 import 'package:quit_cash_mobile/ui/home/home_screen.dart';
 import 'package:quit_cash_mobile/ui/onboarding/onboarding_screen.dart';
+import 'package:quit_cash_mobile/ui/trends/trends_screen.dart';
 import 'package:quit_cash_mobile/ui/trophies/trophies_screen.dart';
 
 class QuitCashApp extends StatelessWidget {
@@ -67,7 +68,12 @@ class _ShellState extends State<_Shell> {
       body: Backdrop(
         child: IndexedStack(
           index: _tab,
-          children: const [HomeScreen(), GoalsScreen(), TrophiesScreen()],
+          children: const [
+            HomeScreen(),
+            GoalsScreen(),
+            TrendsScreen(),
+            TrophiesScreen(),
+          ],
         ),
       ),
       bottomNavigationBar: NavigationBar(
@@ -86,6 +92,12 @@ class _ShellState extends State<_Shell> {
             icon: Icon(Icons.flag_outlined),
             selectedIcon: Icon(Icons.flag, color: Palette.outline),
             label: 'Goals',
+          ),
+          NavigationDestination(
+            key: Key('tab-trends'),
+            icon: Icon(Icons.insights_outlined),
+            selectedIcon: Icon(Icons.insights, color: Palette.outline),
+            label: 'Trends',
           ),
           NavigationDestination(
             icon: Icon(Icons.emoji_events_outlined),

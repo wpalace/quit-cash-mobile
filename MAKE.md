@@ -64,14 +64,14 @@ Follow the steps in sequence. Do not skip steps.
 | Path | Purpose |
 |------|---------|
 | `lib/main.dart` | Entry point. Selects the repository. Installs global error handlers. |
-| `lib/domain/models/` | Immutable models and pure rules: `goal`, `habits`, `save_entry`, `tap_cluster`, `progress` (levels, achievements), `reminder_plan`. |
+| `lib/domain/models/` | Immutable models and pure rules: `goal`, `habits`, `save_entry`, `tap_cluster`, `trend_report` and `trend_insights` (pure stats), `progress` (levels, achievements), `reminder_plan`. |
 | `lib/data/repositories/` | `SavingsRepository` interface (returns `Result<T>`), on-device (`prefs_`) and `in_memory_` implementations. |
 | `lib/data/services/reminder_service.dart` | Local notification service (no-op on web). |
 | `lib/utils/` | `Result<T>` (`Ok`/`Error`) and `money()` formatting. |
 | `lib/ui/core/view_models/savings_view_model.dart` | App-wide view model (`ChangeNotifier`). Returns celebrations. |
 | `lib/ui/core/themes/` | Palette, denominations and metal color ramps, picker filter. |
 | `lib/ui/core/widgets/` | Shared widgets: coin, ruby and diamond painters (`diamond_painter.dart`), spinning coin, flying coin, burst, coin rain, ticking number, reminder picker, celebration dialog, backdrop. |
-| `lib/ui/app/`, `lib/ui/home/`, `lib/ui/goals/`, `lib/ui/history/`, `lib/ui/onboarding/`, `lib/ui/trophies/`, `lib/ui/settings/` | App shell (tabs: Bank, Goals, Trophies) and one folder per screen. |
+| `lib/ui/app/`, `lib/ui/home/`, `lib/ui/goals/`, `lib/ui/history/`, `lib/ui/trends/`, `lib/ui/onboarding/`, `lib/ui/trophies/`, `lib/ui/settings/` | App shell (tabs: Bank, Goals, Trends, Trophies) and one folder per screen. |
 | `test/` | Unit, widget and golden (`test/goldens/`) tests. |
 | `integration_test/`, `test_driver/` | End-to-end flow (MAKE.md 4.6). |
 | `.standards/`, `.standards-version`, `.standards-exclude`, `AGENTS.md` | House coding standard (vendored, do not edit). |
@@ -151,4 +151,18 @@ Follow the steps in sequence. Do not skip steps.
 15.8 Edit: tap a record. Amount accepts cents (`8`, `8.5`, `8.50`), must be > $0 and <= $9,999.99 (`parseCents`). Date and time can be changed too. Delete asks for confirmation and shows an Undo snackbar.
 15.9 Total, level and badges are always recomputed from history. An edit down or a delete can take back a level or a badge; nothing is kept separately.
 15.10 Migration: per-tap history (`quitcash.goal.<id>.entries.v1`, also the target of the single-goal migration in 14.8) is clustered with the default 60s window into `entries.v2` on first load, then v1 is removed (v2 is written first, so an interrupted migration re-runs). The total is unchanged; old check-in rows are dropped as before.
+
+## 16. Trends
+
+16.1 Trends is its own tab (Bank, Goals, Trends, Trophies). It shows the active goal; with two or more goals a "This goal / All goals" toggle appears. Dollars only: no XP, streaks or coin currency.
+16.2 Data source: history records (tap clusters, 15). Everything is recomputed from records on each rebuild, so edits and deletes show at once. Math lives in `lib/domain/models/trend_report.dart` and `trend_insights.dart` (pure, unit-tested).
+16.3 Periods (local calendar days; calendar arithmetic, so DST days stay whole): Week = last 7 days incl. today, Month = last 30 days, Year = last 12 calendar months, All = months from the first record. The previous period is the window of the same length just before (none for All).
+16.4 Hero ring: progress from the current level threshold to the next (all-time for the scope); the center shows the period total.
+16.5 Chart: bars per day (Week, Month) or per month (Year, All), the highest bar in gold. The change chip shows % vs the previous period; with an empty previous period there is no % ("No savings in ...").
+16.6 Stats: average per day (period total / days so far), best day (highest day total), biggest single save (largest record).
+16.7 Patterns: dollars by weekday (bars) and records by hour (24-cell heat strip). "Most common craving time" = the 4-hour slot with the most records.
+16.8 Projection: pace = cents per day over the last 30 days (or since the first record if shorter). Next milestone = next level threshold; date = today + remaining / pace (rounded up). Yearly = pace x 365. No date when the pace is 0.
+16.9 Insights: 2–4 cards built only from the numbers above (change vs previous, craving time, strongest weekday, milestone pace). Under 3 records in the period: one friendly "Trends are warming up" card; patterns and projection show placeholder text.
+16.10 Charts are `CustomPainter`s (no chart dependency), like the coin art. They animate in with `TweenAnimationBuilder`.
+16.11 Demo data for screenshots only: `flutter build web --release -t tool/demo_main.dart -o build/web-demo` serves a seeded, in-memory app. It is not part of `lib/` and is never the default.
 

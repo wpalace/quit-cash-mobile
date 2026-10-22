@@ -67,6 +67,14 @@ class SavingsViewModel extends ChangeNotifier {
 
   Progress progressFor(String goalId) => Progress.from(entriesFor(goalId));
 
+  /// Records of every goal together (Trends "All goals").
+  List<SaveEntry> get allEntries => [
+    for (final g in _goals) ...entriesFor(g.id),
+  ];
+
+  /// Clock used for "today" in reports (injectable for tests).
+  DateTime now() => _clock();
+
   /// Dollars saved across every goal (used by reminder copy).
   int get totalCentsAllGoals =>
       _goals.fold(0, (sum, g) => sum + progressFor(g.id).totalCents);
