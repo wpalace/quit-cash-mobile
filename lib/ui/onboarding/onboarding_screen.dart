@@ -4,19 +4,9 @@ import 'package:quit_cash_mobile/domain/models/reminder_plan.dart';
 import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
 import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/backdrop.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/habit_picker.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/reminder_picker.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/spinning_coin.dart';
-
-const habits = [
-  ('🚬', 'Smoking'),
-  ('💨', 'Vaping'),
-  ('☕', 'Fancy coffee'),
-  ('🍔', 'Takeout'),
-  ('🍺', 'Drinking'),
-  ('🛍️', 'Impulse buys'),
-  ('🎰', 'Gambling'),
-  ('✨', 'Something else'),
-];
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -52,7 +42,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 const SizedBox(height: 28),
                 const _SectionTitle('What are you quitting?'),
                 const SizedBox(height: 12),
-                _HabitChips(
+                HabitPicker(
                   value: _pick,
                   onChanged: (name) => setState(() => _pick = name),
                 ),
@@ -122,35 +112,6 @@ class _SectionTitle extends StatelessWidget {
     style: Theme.of(context).textTheme.titleLarge
         ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
   );
-}
-
-class _HabitChips extends StatelessWidget {
-  const _HabitChips({required this.value, required this.onChanged});
-  final String? value;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        for (final (emoji, name) in habits)
-          ChoiceChip(
-            label: Text('$emoji  $name'),
-            selected: value == name,
-            onSelected: (_) => onChanged(name),
-            selectedColor: Palette.gold,
-            backgroundColor: Palette.card,
-            labelStyle: TextStyle(
-              color: value == name ? Palette.outline : Colors.white,
-              fontWeight: FontWeight.w600,
-            ),
-            side: BorderSide.none,
-          ),
-      ],
-    );
-  }
 }
 
 class _StartButton extends StatelessWidget {
