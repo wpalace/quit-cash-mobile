@@ -78,6 +78,42 @@ abstract final class Metals {
     edge: Color(0xFF4E86B5),
     outline: Color(0xFF173352),
   );
+
+  /// Penny: redder and darker than the \$1 copper.
+  static const penny = Metal(
+    light: Color(0xFFF2A07A),
+    base: Color(0xFFB4502C),
+    deep: Color(0xFF7C2C12),
+    edge: Color(0xFF581C08),
+    outline: Color(0xFF2B0C02),
+  );
+
+  /// Nickel: matte grey pewter, low contrast.
+  static const nickel = Metal(
+    light: Color(0xFFC9CDD0),
+    base: Color(0xFF9DA3A7),
+    deep: Color(0xFF71787D),
+    edge: Color(0xFF52595E),
+    outline: Color(0xFF22272A),
+  );
+
+  /// Dime: bright polished silver, cooler and lighter than the \$5.
+  static const dime = Metal(
+    light: Color(0xFFFFFFFF),
+    base: Color(0xFFEFF5FB),
+    deep: Color(0xFFAFC0D2),
+    edge: Color(0xFF7D90A6),
+    outline: Color(0xFF263443),
+  );
+
+  /// Quarter center: warm brass.
+  static const brass = Metal(
+    light: Color(0xFFFFF1AE),
+    base: Color(0xFFD8B347),
+    deep: Color(0xFFA38026),
+    edge: Color(0xFF755A14),
+    outline: Color(0xFF3B2B06),
+  );
 }
 
 /// How a denomination is drawn.
@@ -92,25 +128,66 @@ enum Cut {
   brilliant,
 }
 
+/// Outline of a change coin.
+enum CoinShape {
+  /// Plain disc (penny).
+  round,
+
+  /// Wavy flower edge (nickel).
+  scalloped,
+
+  /// Disc with a center hole, washer style (dime).
+  holed,
+
+  /// Eight-sided (quarter).
+  octagonal,
+}
+
 @immutable
 class Denomination {
-  const Denomination(
-    this.dollars,
+  /// A dollar coin or gem worth [dollars].
+  const Denomination(int dollars, this.name, this.metal, {this.cut = Cut.coin})
+    : cents = dollars * 100,
+      shape = CoinShape.round,
+      inner = null,
+      scale = 1;
+
+  /// A change coin worth [cents] (under \$1), drawn smaller and thinner.
+  const Denomination.change(
+    this.cents,
     this.name,
     this.metal, {
-    this.cut = Cut.coin,
-  });
+    required this.shape,
+    required this.scale,
+    this.inner,
+  }) : cut = Cut.coin;
 
-  final int dollars;
+  /// Value in integer cents.
+  final int cents;
   final String name;
   final Metal metal;
-
   final Cut cut;
+  final CoinShape shape;
+
+  /// Second metal for the center of a two-tone coin.
+  final Metal? inner;
+
+  /// Drawn size relative to a dollar coin.
+  final double scale;
+
+  /// Whole dollars (0 for change coins).
+  int get dollars => cents ~/ 100;
+
+  bool get isChange => cents < 100;
 
   /// Drawn as a faceted gem instead of a coin.
   bool get isGem => cut != Cut.coin;
 
-  String get label => '\$$dollars';
+  /// '\$5' or '25¢'.
+  String get label => isChange ? '$cents¢' : '\$$dollars';
+
+  /// Stable id for keys: '5' for \$5, 'c25' for 25¢.
+  String get id => isChange ? 'c$cents' : '$dollars';
 }
 
 const denominations = <Denomination>[
@@ -122,6 +199,42 @@ const denominations = <Denomination>[
   Denomination(100, 'Ruby', Metals.ruby, cut: Cut.cushion),
   Denomination(500, 'Diamond', Metals.diamond, cut: Cut.brilliant),
 ];
+
+/// Change mode coins (Settings > Change), smallest first.
+const changeDenominations = <Denomination>[
+  Denomination.change(
+    1,
+    'Penny',
+    Metals.penny,
+    shape: CoinShape.round,
+    scale: 0.62,
+  ),
+  Denomination.change(
+    5,
+    'Nickel',
+    Metals.nickel,
+    shape: CoinShape.scalloped,
+    scale: 0.74,
+  ),
+  Denomination.change(
+    10,
+    'Dime',
+    Metals.dime,
+    shape: CoinShape.holed,
+    scale: 0.68,
+  ),
+  Denomination.change(
+    25,
+    'Quarter',
+    Metals.dime,
+    shape: CoinShape.octagonal,
+    scale: 0.82,
+    inner: Metals.brass,
+  ),
+];
+
+/// Every coin, change first, by value.
+const allDenominations = [...changeDenominations, ...denominations];
 
 /// Gold coin: the HUD counter icon and default coin artwork.
 const defaultCoin = Denomination(10, 'Gold', Metals.gold);

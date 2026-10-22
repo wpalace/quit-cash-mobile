@@ -190,18 +190,45 @@ class SavingsViewModel extends ChangeNotifier {
   }
 
   /// Picker denominations after the Settings toggles.
-  List<Denomination> get pickerDenominations => visibleDenominations(
-    showFifty: _showFifty,
-    showHundred: _showHundred,
-    showFiveHundred: _showFiveHundred,
-  );
+  List<Denomination> get pickerDenominations => inChangeMode
+      ? changeDenominations
+      : visibleDenominations(
+          showFifty: _showFifty,
+          showHundred: _showHundred,
+          showFiveHundred: _showFiveHundred,
+        );
 
-  /// The denomination to show for a requested amount: the largest visible
-  /// one at or below it (Settings may have hidden the requested one).
-  Denomination denominationForPick(int dollars) {
+  static const changeKey = 'change';
+  static const changeModeKey = 'changeMode';
+  bool _changeEnabled = false;
+  bool _changeMode = false;
+
+  /// Settings: allow change coins (1¢–25¢). Off by default.
+  bool get changeEnabled => _changeEnabled;
+
+  /// The picker shows change coins. Always false while change is disabled;
+  /// the last chosen mode is remembered for when it is enabled again.
+  bool get inChangeMode => _changeEnabled && _changeMode;
+
+  Future<void> setChangeEnabled(bool value) async {
+    _changeEnabled = value;
+    notifyListeners();
+    _report('save setting', await _repo.saveFlag(changeKey, value));
+  }
+
+  Future<void> setChangeMode(bool value) async {
+    _changeMode = value;
+    notifyListeners();
+    _report('save setting', await _repo.saveFlag(changeModeKey, value));
+  }
+
+  /// The denomination to show for a requested amount in cents: the largest
+  /// visible one at or below it (Settings may have hidden the requested
+  /// one, or the picker mode may have changed).
+  Denomination denominationForPick(int cents) {
     final visible = pickerDenominations;
     return visible.lastWhere(
-      (d) => d.dollars <= dollars,
+      (d) => d.cents <= cents,
       orElse: () => visible.first,
     );
   }
@@ -265,6 +292,11 @@ class SavingsViewModel extends ChangeNotifier {
           null,
         ) ??
         false;
+    _changeEnabled =
+        _orElse('load setting', await _repo.loadFlag(changeKey), null) ?? false;
+    _changeMode =
+        _orElse('load setting', await _repo.loadFlag(changeModeKey), null) ??
+        false;
     _tapWindowSeconds = _validWindow(
       _orElse('load setting', await _repo.loadNumber(tapWindowKey), null),
     );
@@ -284,6 +316,11 @@ class SavingsViewModel extends ChangeNotifier {
       tapWindowChoices.contains(s) ? s ?? 0 : defaultTapWindow.inSeconds;
 
   Future<void> setTapWindowSeconds(int seconds) async {
+    _changeEnabled =
+        _orElse('load setting', await _repo.loadFlag(changeKey), null) ?? false;
+    _changeMode =
+        _orElse('load setting', await _repo.loadFlag(changeModeKey), null) ??
+        false;
     _tapWindowSeconds = _validWindow(seconds);
     notifyListeners();
     _report(
@@ -308,9 +345,17 @@ class SavingsViewModel extends ChangeNotifier {
     if (!dollars.isFinite || dollars <= 0 || dollars > 9999) {
       throw ArgumentError.value(dollars, 'dollars', 'must be in (0, 9999]');
     }
+    return addCents((dollars * 100).round());
+  }
+
+  /// One tap worth [cents] (1¢ to \$9,999). Dollar and change taps join
+  /// the same cluster.
+  Future<Celebration?> addCents(int cents) async {
+    if (cents <= 0 || cents > 999900) {
+      throw ArgumentError.value(cents, 'cents', 'must be in [1, 999900]');
+    }
     final goal = activeGoal;
     if (goal == null) return null;
-    final cents = (dollars * 100).round();
     final now = _clock();
     final before = progress;
     final rows = entriesFor(goal.id);

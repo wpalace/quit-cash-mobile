@@ -34,7 +34,10 @@ class _HomeScreenState extends State<HomeScreen>
   final _heroKey = GlobalKey();
   final _hudCoinKey = GlobalKey();
   final List<Widget> _fx = [];
-  double _amount = 5;
+
+  /// Picked amount in cents per picker mode.
+  int _dollarPick = 500;
+  int _changePick = 25;
   int _fxId = 0;
 
   /// Dollars shown in the HUD lag the model until the flying coins land.
@@ -63,15 +66,17 @@ class _HomeScreenState extends State<HomeScreen>
   void _removeFx(Key key) =>
       setState(() => _fx.removeWhere((w) => w.key == key));
 
+  int _pick(SavingsViewModel m) => m.inChangeMode ? _changePick : _dollarPick;
+
   Future<void> _collect(SavingsViewModel model) async {
-    final denom = model.denominationForPick(_amount.round());
+    final denom = model.denominationForPick(_pick(model));
     unawaited(HapticFeedback.mediumImpact());
     unawaited(SystemSound.play(SystemSoundType.click));
     _squash.forward(from: 0);
     final before = model.progress.total;
     final from = _centerOf(_heroKey);
     final to = _centerOf(_hudCoinKey);
-    final cel = await model.addSavings(denom.dollars.toDouble());
+    final cel = await model.addCents(denom.cents);
     if (!mounted) return;
     if (cel == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -80,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen>
       return;
     }
     final gained = model.progress.total - before;
-    final flights = math.min(denom.dollars, 8);
+    final flights = (denom.cents ~/ 100).clamp(1, 8);
     setState(() {
       _displayTotal = before;
       final bk = ValueKey('b${_fxId++}');
@@ -139,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen>
         if (mounted) unawaited(showReminderPrompt(context));
       });
     }
-    final denom = model.denominationForPick(_amount.round());
+    final denom = model.denominationForPick(_pick(model));
     return SafeArea(
       child: Stack(
         key: _stackKey,
@@ -171,12 +176,22 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
               ),
+              if (model.changeEnabled)
+                _ModeToggle(
+                  change: model.inChangeMode,
+                  onTap: () {
+                    unawaited(HapticFeedback.selectionClick());
+                    unawaited(model.setChangeMode(!model.inChangeMode));
+                  },
+                ),
               _AmountPicker(
                 options: model.pickerDenominations,
                 value: denom,
                 onChanged: (d) {
                   unawaited(HapticFeedback.selectionClick());
-                  setState(() => _amount = d.dollars.toDouble());
+                  setState(() {
+                    d.isChange ? _changePick = d.cents : _dollarPick = d.cents;
+                  });
                 },
               ),
               const SizedBox(height: 12),
@@ -498,6 +513,40 @@ class _Pill extends StatelessWidget {
   );
 }
 
+/// Pill above the picker: switches between dollar and change coins.
+class _ModeToggle extends StatelessWidget {
+  const _ModeToggle({required this.change, required this.onTap});
+  final bool change;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(0, 0, 16, 8),
+        child: TextButton.icon(
+          key: const Key('mode-toggle'),
+          style: TextButton.styleFrom(
+            backgroundColor: change ? Palette.gold : Palette.card,
+            foregroundColor: change ? Palette.outline : Colors.white,
+            shape: const StadiumBorder(),
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+          ),
+          onPressed: onTap,
+          icon: Text(change ? '\$' : '¢', style: _toggleGlyph),
+          label: Text(
+            change ? 'Dollars' : 'Change',
+            style: const TextStyle(fontWeight: FontWeight.w900),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+const _toggleGlyph = TextStyle(fontSize: 18, fontWeight: FontWeight.w900);
+
 class _AmountPicker extends StatelessWidget {
   const _AmountPicker({
     required this.options,
@@ -517,7 +566,7 @@ class _AmountPicker extends StatelessWidget {
           for (final d in options)
             Expanded(
               child: _DenomChip(
-                key: Key('amount-${d.dollars}'),
+                key: Key('amount-${d.id}'),
                 denomination: d,
                 selected: d == value,
                 onTap: () => onChanged(d),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:quit_cash_mobile/ui/core/themes/denominations.dart';
 import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/change_coin_painter.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/diamond_painter.dart';
 
 /// Paints a chunky, cartoon-3D gold coin rotated [angle] radians around the
@@ -409,6 +410,11 @@ CustomPainter painterFor(
   required double angle,
   double glint = 0,
 }) => switch (d.cut) {
+  Cut.coin when d.isChange => ChangeCoinPainter(
+    denomination: d,
+    angle: angle,
+    glint: glint,
+  ),
   Cut.coin => CoinPainter(angle: angle, glint: glint, metal: d.metal),
   Cut.cushion => GemPainter(angle: angle, glint: glint, metal: d.metal),
   Cut.brilliant => DiamondPainter(angle: angle, glint: glint, metal: d.metal),

@@ -121,7 +121,11 @@ void main() {
     await model.addSavings(5);
     await tester.tap(find.byKey(const Key('settings')));
     await settle(tester);
-    await tester.ensureVisible(find.byKey(const Key('reset')));
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('reset')),
+      200,
+      scrollable: find.byType(Scrollable).last,
+    );
     await settle(tester, 3);
     expect(find.text('Reset "Vaping" progress'), findsOneWidget);
     await tester.tap(find.byKey(const Key('reset')));

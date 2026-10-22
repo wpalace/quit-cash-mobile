@@ -166,3 +166,10 @@ Follow the steps in sequence. Do not skip steps.
 16.10 Charts are `CustomPainter`s (no chart dependency), like the coin art. They animate in with `TweenAnimationBuilder`.
 16.11 Demo data for screenshots only: `flutter build web --release -t tool/demo_main.dart -o build/web-demo` serves a seeded, in-memory app. It is not part of `lib/` and is never the default.
 
+
+## 17. Change (cents) mode
+
+17.1 Settings > Change (global, off by default, saved as flag `change`). When on, a pill above the Bank picker (`¢ Change` / `$ Dollars`) switches the picker between dollar coins and change coins. The last mode is saved (flag `changeMode`). When Change is off the pill is hidden and the picker is always dollars; the saved mode returns when it is turned on again.
+17.2 Change coins live in `changeDenominations` (`lib/ui/core/themes/denominations.dart`) and are drawn by `ChangeCoinPainter` (`lib/ui/core/widgets/change_coin_painter.dart`): smaller (`scale`) and thinner than dollar coins, same outline, edge stack and glint. 1¢ round penny copper (redder and darker than the $1 copper), 5¢ matte nickel with a scalloped edge, 10¢ bright silver with a center hole, 25¢ octagonal silver ring with a brass center. Labels read `1¢`…`25¢`; the coins draw no text (goldens stay font-free).
+17.3 All money is integer cents: `SavingsViewModel.addCents` (dollar taps go through it too). Change and dollar taps join the same history cluster within the window. Level and badge math already uses cents. A change tap flies one coin to the counter, which shows cents (`$0.10`).
+17.4 Golden: `test/goldens/change_coins.png`. Frames: `flutter test tool/coin_frames_test.dart --dart-define=OUT=/tmp/f --dart-define=CENTS=25` (also writes `change-sheet.png`).

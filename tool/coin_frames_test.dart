@@ -1,6 +1,7 @@
 // Renders spinning-coin frames to PNG for a marketing GIF.
 // Run: flutter test tool/coin_frames_test.dart --dart-define=OUT=/tmp/frames
-// Optional: --dart-define=DENOM=100 (ruby), 1, 5, 10, 20, 50 (default 50).
+// Optional: --dart-define=DENOM=100 (ruby), 1, 5, 10, 20, 50, 500 (default 50)
+// or --dart-define=CENTS=25 for a change coin (1, 5, 10, 25).
 // Also writes OUT/sheet.png with every denomination side by side.
 import 'dart:io';
 import 'dart:math' as math;
@@ -18,7 +19,10 @@ void main() {
     Directory(out).createSync(recursive: true);
     const frames = 48, size = 320.0;
     const denom = int.fromEnvironment('DENOM', defaultValue: 50);
-    final d = denominationFor(denom);
+    const cents = int.fromEnvironment('CENTS');
+    final d = cents > 0
+        ? changeDenominations.firstWhere((c) => c.cents == cents)
+        : denominationFor(denom);
     const sparkles = [(0.15, 0.2, 0.0), (0.85, 0.3, 0.4), (0.78, 0.85, 0.7)];
     for (var i = 0; i < frames; i++) {
       final t = i / frames;
@@ -53,28 +57,33 @@ void main() {
         // `!` is safe: PNG encoding of an in-memory image always yields bytes.
       ).writeAsBytesSync(png!.buffer.asUint8List());
     }
-    // Sheet: all denominations, slightly turned so the edge shows.
-    const cell = 220.0;
-    final rec = ui.PictureRecorder();
-    final canvas = Canvas(rec);
-    final w = cell * denominations.length;
-    canvas.drawRect(
-      Rect.fromLTWH(0, 0, w, cell),
-      Paint()..color = Palette.skyTop,
-    );
-    for (var i = 0; i < denominations.length; i++) {
-      canvas.save();
-      canvas.translate(i * cell + 20, 20);
-      painterFor(
-        denominations[i],
-        angle: 0.5,
-        glint: 0.35,
-      ).paint(canvas, const Size.square(cell - 40));
-      canvas.restore();
-    }
-    final img = await rec.endRecording().toImage(w.toInt(), cell.toInt());
-    final png = await img.toByteData(format: ui.ImageByteFormat.png);
-    // `!` is safe: PNG encoding of an in-memory image always yields bytes.
-    File('$out/sheet.png').writeAsBytesSync(png!.buffer.asUint8List());
+    await _sheet('$out/sheet.png', denominations);
+    await _sheet('$out/change-sheet.png', changeDenominations);
   });
+}
+
+/// All [coins] side by side, slightly turned so the edge shows.
+Future<void> _sheet(String path, List<Denomination> denominations) async {
+  const cell = 220.0;
+  final rec = ui.PictureRecorder();
+  final canvas = Canvas(rec);
+  final w = cell * denominations.length;
+  canvas.drawRect(
+    Rect.fromLTWH(0, 0, w, cell),
+    Paint()..color = Palette.skyTop,
+  );
+  for (var i = 0; i < denominations.length; i++) {
+    canvas.save();
+    canvas.translate(i * cell + 20, 20);
+    painterFor(
+      denominations[i],
+      angle: 0.5,
+      glint: 0.35,
+    ).paint(canvas, const Size.square(cell - 40));
+    canvas.restore();
+  }
+  final img = await rec.endRecording().toImage(w.toInt(), cell.toInt());
+  final png = await img.toByteData(format: ui.ImageByteFormat.png);
+  // `!` is safe: PNG encoding of an in-memory image always yields bytes.
+  File(path).writeAsBytesSync(png!.buffer.asUint8List());
 }

@@ -60,10 +60,10 @@ List<List<SaveEntry>> groupByDay(List<SaveEntry> newestFirst) {
   return out;
 }
 
-/// Largest denomination at or below [cents], for the mini coin.
-Denomination coinFor(int cents) => denominations.lastWhere(
-  (d) => d.dollars * 100 <= cents,
-  orElse: () => denominations.first,
+/// Largest coin (change or dollar) at or below [cents], for the mini coin.
+Denomination coinFor(int cents) => allDenominations.lastWhere(
+  (d) => d.cents <= cents,
+  orElse: () => allDenominations.first,
 );
 
 class _Total extends StatelessWidget {

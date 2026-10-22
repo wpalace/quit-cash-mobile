@@ -171,6 +171,14 @@ class _CoinToggles extends StatelessWidget {
           value: model.showFiveHundred,
           onChanged: model.setShowFiveHundred,
         ),
+        _DenomSwitch(
+          key: const Key('toggle-change'),
+          denomination: changeDenominations.last,
+          title: 'Change',
+          subtitle: '1¢, 5¢, 10¢ and 25¢ coins on the Bank screen',
+          value: model.changeEnabled,
+          onChanged: model.setChangeEnabled,
+        ),
       ],
     );
   }
