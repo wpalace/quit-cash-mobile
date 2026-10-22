@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:quit_cash_mobile/domain/models/goal.dart';
 import 'package:quit_cash_mobile/domain/models/progress.dart';
 import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
 import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
@@ -10,14 +11,17 @@ class TrophiesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.watch<SavingsViewModel>().progress;
+    final model = context.watch<SavingsViewModel>();
+    final p = model.progress;
     final unlocked = p.unlocked;
     return SafeArea(
       child: CustomScrollView(
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.all(16),
-            sliver: SliverToBoxAdapter(child: _Summary(progress: p)),
+            sliver: SliverToBoxAdapter(
+              child: _Summary(progress: p, goal: model.activeGoal),
+            ),
           ),
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -40,8 +44,9 @@ class TrophiesScreen extends StatelessWidget {
 }
 
 class _Summary extends StatelessWidget {
-  const _Summary({required this.progress});
+  const _Summary({required this.progress, required this.goal});
   final Progress progress;
+  final Goal? goal;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +63,11 @@ class _Summary extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineMedium
               ?.copyWith(color: Palette.gold, fontWeight: FontWeight.w900),
         ),
+        if (goal case final g?)
+          Text(
+            '${g.emoji} ${g.title}',
+            style: const TextStyle(color: Colors.white70, fontSize: 16),
+          ),
         const SizedBox(height: 12),
         Row(
           children: [

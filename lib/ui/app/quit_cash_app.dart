@@ -4,6 +4,7 @@ import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
 import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/backdrop.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/spinning_coin.dart';
+import 'package:quit_cash_mobile/ui/goals/goals_screen.dart';
 import 'package:quit_cash_mobile/ui/home/home_screen.dart';
 import 'package:quit_cash_mobile/ui/onboarding/onboarding_screen.dart';
 import 'package:quit_cash_mobile/ui/trophies/trophies_screen.dart';
@@ -43,7 +44,8 @@ class _Root extends StatelessWidget {
         body: Backdrop(child: Center(child: SpinningCoin(size: 120))),
       );
     }
-    if (model.habit == null) return const OnboardingScreen();
+    // No goals (first install, or every goal deleted): onboarding.
+    if (model.activeGoal == null) return const OnboardingScreen();
     return _Shell(initialTab: initialTab);
   }
 }
@@ -65,7 +67,7 @@ class _ShellState extends State<_Shell> {
       body: Backdrop(
         child: IndexedStack(
           index: _tab,
-          children: const [HomeScreen(), TrophiesScreen()],
+          children: const [HomeScreen(), GoalsScreen(), TrophiesScreen()],
         ),
       ),
       bottomNavigationBar: NavigationBar(
@@ -78,6 +80,12 @@ class _ShellState extends State<_Shell> {
             icon: Icon(Icons.savings_outlined),
             selectedIcon: Icon(Icons.savings, color: Palette.outline),
             label: 'Bank',
+          ),
+          NavigationDestination(
+            key: Key('tab-goals'),
+            icon: Icon(Icons.flag_outlined),
+            selectedIcon: Icon(Icons.flag, color: Palette.outline),
+            label: 'Goals',
           ),
           NavigationDestination(
             icon: Icon(Icons.emoji_events_outlined),

@@ -64,14 +64,14 @@ Follow the steps in sequence. Do not skip steps.
 | Path | Purpose |
 |------|---------|
 | `lib/main.dart` | Entry point. Selects the repository. Installs global error handlers. |
-| `lib/domain/models/` | Immutable models and pure rules: `save_entry`, `progress` (levels, achievements), `reminder_plan`. |
+| `lib/domain/models/` | Immutable models and pure rules: `goal`, `habits`, `save_entry`, `progress` (levels, achievements), `reminder_plan`. |
 | `lib/data/repositories/` | `SavingsRepository` interface (returns `Result<T>`), on-device (`prefs_`) and `in_memory_` implementations. |
 | `lib/data/services/reminder_service.dart` | Local notification service (no-op on web). |
 | `lib/utils/` | `Result<T>` (`Ok`/`Error`) and `money()` formatting. |
 | `lib/ui/core/view_models/savings_view_model.dart` | App-wide view model (`ChangeNotifier`). Returns celebrations. |
 | `lib/ui/core/themes/` | Palette, denominations and metal color ramps, picker filter. |
 | `lib/ui/core/widgets/` | Shared widgets: coin, ruby and diamond painters (`diamond_painter.dart`), spinning coin, flying coin, burst, coin rain, ticking number, reminder picker, celebration dialog, backdrop. |
-| `lib/ui/app/`, `lib/ui/home/`, `lib/ui/onboarding/`, `lib/ui/trophies/`, `lib/ui/settings/` | App shell and one folder per screen. |
+| `lib/ui/app/`, `lib/ui/home/`, `lib/ui/goals/`, `lib/ui/onboarding/`, `lib/ui/trophies/`, `lib/ui/settings/` | App shell (tabs: Bank, Goals, Trophies) and one folder per screen. |
 | `test/` | Unit, widget and golden (`test/goldens/`) tests. |
 | `integration_test/`, `test_driver/` | End-to-end flow (MAKE.md 4.6). |
 | `.standards/`, `.standards-version`, `.standards-exclude`, `AGENTS.md` | House coding standard (vendored, do not edit). |
@@ -109,7 +109,7 @@ Follow the steps in sequence. Do not skip steps.
 12.2 The choice is stored on the device (`quitcash.reminder.v1`). The user can change it in Settings (gear icon on the Bank screen).
 12.3 Users who finished onboarding before this feature see a one-time prompt on the Bank screen.
 12.4 Reminders go out at 7 pm local time (`reminderHour` in `lib/reminders/reminder_plan.dart`).
-12.5 The app queues the next 14 reminders. It rebuilds the queue at each launch, each save and each change. The copy quotes the total dollars saved.
+12.5 The app queues the next 14 reminders. It rebuilds the queue at each launch, each save and each change. The copy quotes the total dollars saved across all goals (one app-wide notification, not tied to whichever goal happens to be active).
 12.6 The app asks for notification permission only when the user selects an option that is not Never.
 12.7 Android: `POST_NOTIFICATIONS` (Android 13+) and `RECEIVE_BOOT_COMPLETED` are in the manifest. The app uses inexact alarms, so it does not need `SCHEDULE_EXACT_ALARM`.
 12.8 Android: core library desugaring is on in `android/app/build.gradle.kts`. Do not remove it.
@@ -126,4 +126,15 @@ Follow the steps in sequence. Do not skip steps.
 13.5 Settings has "Show $50", "Show $100" and "Show $500". All are OFF by default (opt-in). They are stored as `quitcash.flag.show50`, `quitcash.flag.show100` and `quitcash.flag.show500`.
 13.6 Hidden denominations go out of the picker only. History, total and level do not change.
 13.7 If the selected denomination becomes hidden, the picker selects the largest visible one below it.
-13.8 Reset all progress is in Settings. Reset does not change settings.
+13.8 Reset in Settings clears only the active goal's history (button: `Reset "<goal>" progress`). Other goals and settings do not change.
+
+## 14. Goals
+
+14.1 A goal is one habit being kicked or curbed (habit from the shared `HabitPicker`, optional label up to 30 characters, emoji from the habit). Each goal has its own savings history, total, level and badges.
+14.2 Bank and Trophies show the active goal. Switch on the Goals tab (tap a goal; the active one has a gold border and an ACTIVE tag) or from Bank (tap the "by skipping ..." chip to open the quick switcher sheet).
+14.3 Add a goal: Goals tab "Add a goal", or the switcher sheet. The new goal becomes active.
+14.4 Delete a goal: trash icon, then a destructive confirm. If the active goal is deleted, the first remaining goal becomes active.
+14.5 Deleting the last goal returns to onboarding. Global settings stay: the coin toggles and the reminder choice (onboarding preselects the saved choice, so the user can keep or change it).
+14.6 Settings (coin toggles, reminders) are global, not per goal.
+14.7 Storage: `quitcash.goals.v1` (JSON list), `quitcash.goal.active.v1`, `quitcash.goal.<id>.entries.v1`.
+14.8 Migration: single-goal data (`quitcash.habit.v1` + `quitcash.entries.v1`) becomes goal `g1`, active. The history string is copied verbatim, the goals list is written last (an interrupted migration re-runs), then the legacy keys are removed. Tested in `test/repository_test.dart`.

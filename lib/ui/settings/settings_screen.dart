@@ -53,7 +53,15 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 32),
               const Text('⚠️ Danger zone', style: _heading),
               const SizedBox(height: 8),
-              _ResetButton(onPressed: () => _confirmReset(context, model)),
+              _ResetButton(
+                goal: model.activeGoal?.title ?? '',
+                onPressed: () => _confirmReset(context, model),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Resets only the current goal. Delete goals on the Goals tab.',
+                style: TextStyle(color: Colors.white54),
+              ),
             ],
           ),
         ),
@@ -65,12 +73,14 @@ class SettingsScreen extends StatelessWidget {
     BuildContext context,
     SavingsViewModel model,
   ) async {
+    final goal = model.activeGoal?.title ?? '';
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Reset everything?'),
-        content: const Text(
-          'This deletes your savings history and badges on this device.',
+        title: Text('Reset "$goal"?'),
+        content: Text(
+          'This deletes the savings history and badges of "$goal" only. '
+          'Your other goals and your settings stay as they are.',
         ),
         actions: [
           TextButton(
@@ -79,7 +89,7 @@ class SettingsScreen extends StatelessWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(c, true),
-            child: const Text('Reset'),
+            child: const Text('Reset goal'),
           ),
         ],
       ),
@@ -126,7 +136,8 @@ class _CoinToggles extends StatelessWidget {
 }
 
 class _ResetButton extends StatelessWidget {
-  const _ResetButton({required this.onPressed});
+  const _ResetButton({required this.goal, required this.onPressed});
+  final String goal;
   final VoidCallback onPressed;
 
   @override
@@ -138,7 +149,7 @@ class _ResetButton extends StatelessWidget {
         side: const BorderSide(color: Colors.redAccent),
       ),
       icon: const Icon(Icons.restart_alt),
-      label: const Text('Reset all progress'),
+      label: Text('Reset "$goal" progress'),
       onPressed: onPressed,
     );
   }

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:quit_cash_mobile/domain/models/goal.dart';
 import 'package:quit_cash_mobile/domain/models/progress.dart';
 import 'package:quit_cash_mobile/ui/core/themes/denominations.dart';
 import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
@@ -11,9 +12,11 @@ import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/celebration_dialog.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/coin_burst.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/flying_coin.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/goal_switcher_sheet.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/reminder_picker.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/spinning_coin.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/ticking_number.dart';
+import 'package:quit_cash_mobile/ui/goals/goals_screen.dart';
 import 'package:quit_cash_mobile/ui/settings/settings_screen.dart';
 import 'package:quit_cash_mobile/utils/money.dart';
 
@@ -149,7 +152,14 @@ class _HomeScreenState extends State<HomeScreen>
                 coinKey: _hudCoinKey,
               ),
               const SizedBox(height: 8),
-              _TotalHeader(total: p.total, habit: model.habit),
+              _TotalHeader(
+                total: p.total,
+                goal: model.activeGoal,
+                onSwitch: () => showGoalSwitcher(
+                  context,
+                  onAdd: () => openAddGoal(context),
+                ),
+              ),
               Expanded(
                 child: Center(
                   child: _HeroCoin(
@@ -179,14 +189,19 @@ class _HomeScreenState extends State<HomeScreen>
 }
 
 class _TotalHeader extends StatelessWidget {
-  const _TotalHeader({required this.total, required this.habit});
+  const _TotalHeader({
+    required this.total,
+    required this.goal,
+    required this.onSwitch,
+  });
   final double total;
-  final String? habit;
+  final Goal? goal;
+  final VoidCallback onSwitch;
 
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
-    final habit = this.habit;
+    final goal = this.goal;
     return Column(
       children: [
         Text(
@@ -205,12 +220,41 @@ class _TotalHeader extends StatelessWidget {
             shadows: const [Shadow(color: Palette.goldDeep, blurRadius: 18)],
           ),
         ),
-        if (habit != null)
-          Text(
-            'by skipping ${habit.toLowerCase()}',
-            style: text.bodyMedium?.copyWith(color: Colors.white54),
-          ),
+        if (goal != null) _GoalChip(goal: goal, onTap: onSwitch),
       ],
+    );
+  }
+}
+
+/// Active goal under the total; tap to open the quick goal switcher.
+class _GoalChip extends StatelessWidget {
+  const _GoalChip({required this.goal, required this.onTap});
+  final Goal goal;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton(
+      key: const Key('goal-switcher'),
+      style: TextButton.styleFrom(
+        foregroundColor: Colors.white70,
+        backgroundColor: Palette.card,
+        shape: const StadiumBorder(),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+      ),
+      onPressed: onTap,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              '${goal.emoji} by skipping ${goal.title.toLowerCase()}',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const Icon(Icons.expand_more, size: 18),
+        ],
+      ),
     );
   }
 }
