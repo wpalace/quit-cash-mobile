@@ -2,7 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../denominations.dart';
+import 'package:quit_cash_mobile/ui/core/themes/denominations.dart';
 
 /// Paints a chunky, cartoon-3D gold coin rotated [angle] radians around the
 /// vertical (Y) axis. Original artwork in the spirit of classic 3D platformer

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quit_cash_mobile/data/save_entry.dart';
-import 'package:quit_cash_mobile/game/progress.dart';
+import 'package:quit_cash_mobile/domain/models/progress.dart';
+import 'package:quit_cash_mobile/domain/models/save_entry.dart';
 
 SaveEntry save(int dollars, DateTime at) =>
     SaveEntry(kind: EntryKind.save, cents: dollars * 100, at: at);

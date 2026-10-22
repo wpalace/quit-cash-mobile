@@ -1,9 +1,8 @@
 import 'dart:convert';
 
+import 'package:quit_cash_mobile/data/repositories/savings_repository.dart';
+import 'package:quit_cash_mobile/domain/models/save_entry.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'save_entry.dart';
-import 'savings_repository.dart';
 
 /// On-device repository backed by shared_preferences (NSUserDefaults on iOS,
 /// SharedPreferences on Android, localStorage on web, a JSON file on

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../../state/savings_model.dart';
-import '../palette.dart';
-import '../../reminders/reminder_plan.dart';
-import '../widgets/backdrop.dart';
-import '../widgets/reminder_picker.dart';
-import '../widgets/spinning_coin.dart';
+import 'package:quit_cash_mobile/domain/models/reminder_plan.dart';
+import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
+import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/backdrop.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/reminder_picker.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/spinning_coin.dart';
 
 const habits = [
   ('🚬', 'Smoking'),
@@ -31,7 +30,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   ReminderFrequency _reminder = ReminderFrequency.daily;
 
   Future<void> _start() async {
-    final model = context.read<SavingsModel>();
+    final model = context.read<SavingsViewModel>();
     await applyReminder(context, _reminder);
     await model.setHabit(_pick!);
   }

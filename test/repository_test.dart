@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quit_cash_mobile/data/prefs_savings_repository.dart';
-import 'package:quit_cash_mobile/data/save_entry.dart';
-import 'package:quit_cash_mobile/data/savings_repository.dart';
-import 'package:quit_cash_mobile/state/savings_model.dart';
+import 'package:quit_cash_mobile/data/repositories/prefs_savings_repository.dart';
+import 'package:quit_cash_mobile/data/repositories/savings_repository.dart';
+import 'package:quit_cash_mobile/domain/models/save_entry.dart';
+import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
@@ -32,7 +32,7 @@ void main() {
   });
 
   test('model reports level-up and new badges once', () async {
-    final model = SavingsModel(
+    final model = SavingsViewModel(
       repository: InMemorySavingsRepository(),
       clock: () => DateTime(2026, 10, 19),
     );
@@ -48,7 +48,7 @@ void main() {
   });
 
   test('model rejects invalid amounts', () async {
-    final model = SavingsModel(repository: InMemorySavingsRepository());
+    final model = SavingsViewModel(repository: InMemorySavingsRepository());
     expect(() => model.addSavings(-1), throwsArgumentError);
     expect(() => model.addSavings(double.nan), throwsArgumentError);
   });

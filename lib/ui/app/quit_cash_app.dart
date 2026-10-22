@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../state/savings_model.dart';
-import 'palette.dart';
-import 'screens/home_screen.dart';
-import 'screens/onboarding_screen.dart';
-import 'screens/trophies_screen.dart';
-import 'widgets/backdrop.dart';
-import 'widgets/spinning_coin.dart';
+import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
+import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/backdrop.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/spinning_coin.dart';
+import 'package:quit_cash_mobile/ui/home/home_screen.dart';
+import 'package:quit_cash_mobile/ui/onboarding/onboarding_screen.dart';
+import 'package:quit_cash_mobile/ui/trophies/trophies_screen.dart';
 
 class QuitCashApp extends StatelessWidget {
   const QuitCashApp({super.key, this.initialTab = 0});
@@ -38,7 +37,7 @@ class _Root extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final model = context.watch<SavingsModel>();
+    final model = context.watch<SavingsViewModel>();
     if (model.isLoading) {
       return const Scaffold(
         body: Backdrop(child: Center(child: SpinningCoin(size: 120))),

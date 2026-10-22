@@ -1,4 +1,4 @@
-import '../data/save_entry.dart';
+import 'package:quit_cash_mobile/domain/models/save_entry.dart';
 
 /// Pure game rules. Everything is derived from the entry log, so there is
 /// no second source of truth to drift.

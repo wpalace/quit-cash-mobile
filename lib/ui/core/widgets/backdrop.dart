@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../palette.dart';
+import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
 
 /// Night-sky gradient with soft static stars; gold pops against it.
 class Backdrop extends StatelessWidget {

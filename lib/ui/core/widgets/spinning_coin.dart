@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../denominations.dart';
-import 'coin_painter.dart';
+import 'package:quit_cash_mobile/ui/core/themes/denominations.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/coin_painter.dart';
 
 /// A continuously spinning coin. [period] is one full Y-axis turn.
 /// Pass [spin] = false for a static coin (used in golden/test contexts).

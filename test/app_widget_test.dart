@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
-import 'package:quit_cash_mobile/data/savings_repository.dart';
-import 'package:quit_cash_mobile/reminders/reminder_plan.dart';
-import 'package:quit_cash_mobile/state/savings_model.dart';
-import 'package:quit_cash_mobile/ui/app.dart';
+import 'package:quit_cash_mobile/data/repositories/savings_repository.dart';
+import 'package:quit_cash_mobile/domain/models/reminder_plan.dart';
+import 'package:quit_cash_mobile/ui/app/quit_cash_app.dart';
+import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
 
-Future<SavingsModel> pumpApp(
+Future<SavingsViewModel> pumpApp(
   WidgetTester tester, {
   InMemorySavingsRepository? repo,
 }) async {
   tester.view.devicePixelRatio = 1;
   tester.view.physicalSize = const Size(430, 932);
   addTearDown(tester.view.reset);
-  final model = SavingsModel(repository: repo ?? InMemorySavingsRepository());
+  final model = SavingsViewModel(
+    repository: repo ?? InMemorySavingsRepository(),
+  );
   await tester.pumpWidget(
     ChangeNotifierProvider.value(value: model, child: const QuitCashApp()),
   );

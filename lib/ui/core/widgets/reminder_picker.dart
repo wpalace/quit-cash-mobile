@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../../reminders/reminder_plan.dart';
-import '../../state/savings_model.dart';
-import '../palette.dart';
+import 'package:quit_cash_mobile/domain/models/reminder_plan.dart';
+import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
+import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
 
 /// Chip row for choosing reminder frequency.
 class ReminderPicker extends StatelessWidget {
@@ -46,7 +45,7 @@ class ReminderPicker extends StatelessWidget {
 /// Save [f] via the model and tell the user if the OS blocked notifications.
 Future<void> applyReminder(BuildContext context, ReminderFrequency f) async {
   final messenger = ScaffoldMessenger.maybeOf(context);
-  final granted = await context.read<SavingsModel>().setReminder(f);
+  final granted = await context.read<SavingsViewModel>().setReminder(f);
   if (!granted && f.enabled) {
     messenger?.showSnackBar(
       const SnackBar(

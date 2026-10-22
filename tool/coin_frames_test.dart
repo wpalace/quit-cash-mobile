@@ -8,9 +8,9 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quit_cash_mobile/ui/denominations.dart';
-import 'package:quit_cash_mobile/ui/palette.dart';
-import 'package:quit_cash_mobile/ui/widgets/coin_painter.dart';
+import 'package:quit_cash_mobile/ui/core/themes/denominations.dart';
+import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/coin_painter.dart';
 
 void main() {
   test('render coin frames', () async {

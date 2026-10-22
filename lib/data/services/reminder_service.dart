@@ -1,10 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:quit_cash_mobile/domain/models/reminder_plan.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:timezone/timezone.dart' as tz;
-
-import 'reminder_plan.dart';
 
 /// Device reminder seam. The app depends only on this interface.
 abstract class ReminderService {

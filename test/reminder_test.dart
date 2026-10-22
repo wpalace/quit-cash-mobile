@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quit_cash_mobile/data/prefs_savings_repository.dart';
-import 'package:quit_cash_mobile/data/savings_repository.dart';
-import 'package:quit_cash_mobile/reminders/reminder_plan.dart';
-import 'package:quit_cash_mobile/reminders/reminder_service.dart';
-import 'package:quit_cash_mobile/state/savings_model.dart';
+import 'package:quit_cash_mobile/data/repositories/prefs_savings_repository.dart';
+import 'package:quit_cash_mobile/data/repositories/savings_repository.dart';
+import 'package:quit_cash_mobile/data/services/reminder_service.dart';
+import 'package:quit_cash_mobile/domain/models/reminder_plan.dart';
+import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
@@ -119,13 +119,13 @@ void main() {
   });
 
   group('model', () {
-    Future<(SavingsModel, FakeReminders, InMemorySavingsRepository)> make({
+    Future<(SavingsViewModel, FakeReminders, InMemorySavingsRepository)> make({
       String? stored,
       bool grant = true,
     }) async {
       final repo = InMemorySavingsRepository()..reminder = stored;
       final fake = FakeReminders(grant: grant);
-      final m = SavingsModel(repository: repo, reminders: fake);
+      final m = SavingsViewModel(repository: repo, reminders: fake);
       await Future<void>.delayed(Duration.zero);
       return (m, fake, repo);
     }
@@ -162,7 +162,7 @@ void main() {
   test(
     'unsupported platform (web): no permission prompt, no warning',
     () async {
-      final m = SavingsModel(repository: InMemorySavingsRepository());
+      final m = SavingsViewModel(repository: InMemorySavingsRepository());
       await Future<void>.delayed(Duration.zero);
       expect(await m.setReminder(ReminderFrequency.daily), isTrue);
       expect(m.reminder, ReminderFrequency.daily);

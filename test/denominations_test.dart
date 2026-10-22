@@ -2,11 +2,11 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:quit_cash_mobile/data/prefs_savings_repository.dart';
-import 'package:quit_cash_mobile/data/savings_repository.dart';
-import 'package:quit_cash_mobile/state/savings_model.dart';
-import 'package:quit_cash_mobile/ui/denominations.dart';
-import 'package:quit_cash_mobile/ui/widgets/coin_painter.dart';
+import 'package:quit_cash_mobile/data/repositories/prefs_savings_repository.dart';
+import 'package:quit_cash_mobile/data/repositories/savings_repository.dart';
+import 'package:quit_cash_mobile/ui/core/themes/denominations.dart';
+import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/coin_painter.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
@@ -101,14 +101,14 @@ void main() {
 
     test('model defaults both off and reloads saved toggles', () async {
       final repo = PrefsSavingsRepository();
-      final m1 = SavingsModel(repository: repo);
+      final m1 = SavingsViewModel(repository: repo);
       await Future<void>.delayed(Duration.zero);
       expect(m1.showFifty, isFalse);
       expect(m1.showHundred, isFalse);
       await m1.setShowFifty(true);
       await m1.setShowHundred(true);
 
-      final m2 = SavingsModel(repository: PrefsSavingsRepository());
+      final m2 = SavingsViewModel(repository: PrefsSavingsRepository());
       await Future<void>.delayed(const Duration(milliseconds: 10));
       expect(m2.showFifty, isTrue);
       expect(m2.showHundred, isTrue);
@@ -116,7 +116,7 @@ void main() {
 
     test('hiding a denomination keeps history', () async {
       final repo = InMemorySavingsRepository();
-      final m = SavingsModel(repository: repo);
+      final m = SavingsViewModel(repository: repo);
       await Future<void>.delayed(Duration.zero);
       await m.setShowHundred(true);
       await m.addSavings(100);

@@ -4,16 +4,15 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-
-import '../../game/progress.dart';
-import '../../state/savings_model.dart';
-import '../palette.dart';
-import '../widgets/celebration_dialog.dart';
-import '../widgets/effects.dart';
-import '../widgets/reminder_picker.dart';
-import '../denominations.dart';
-import '../widgets/spinning_coin.dart';
-import 'settings_screen.dart';
+import 'package:quit_cash_mobile/domain/models/progress.dart';
+import 'package:quit_cash_mobile/ui/core/themes/denominations.dart';
+import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
+import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/celebration_dialog.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/effects.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/reminder_picker.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/spinning_coin.dart';
+import 'package:quit_cash_mobile/ui/settings/settings_screen.dart';
 
 String money(double v) {
   final whole = v.floor();
@@ -66,12 +65,12 @@ class _HomeScreenState extends State<HomeScreen>
       setState(() => _fx.removeWhere((w) => w.key == key));
 
   /// Denominations shown in the picker (Settings can hide \$50 / \$100).
-  static List<Denomination> _visible(SavingsModel m) =>
+  static List<Denomination> _visible(SavingsViewModel m) =>
       visibleDenominations(showFifty: m.showFifty, showHundred: m.showHundred);
 
   /// The selected denomination; falls back to the largest visible one below
   /// the selection if Settings just hid it.
-  Denomination _selected(SavingsModel m) {
+  Denomination _selected(SavingsViewModel m) {
     final visible = _visible(m);
     return visible.lastWhere(
       (d) => d.dollars <= _amount,
@@ -79,7 +78,7 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Future<void> _collect(SavingsModel model) async {
+  Future<void> _collect(SavingsViewModel model) async {
     final denom = _selected(model);
     unawaited(HapticFeedback.mediumImpact());
     unawaited(SystemSound.play(SystemSoundType.click));
@@ -144,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  Future<void> _checkIn(SavingsModel model) async {
+  Future<void> _checkIn(SavingsViewModel model) async {
     unawaited(HapticFeedback.heavyImpact());
     final cel = await model.checkIn();
     if (!mounted || cel == null) return;
@@ -153,7 +152,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    final model = context.watch<SavingsModel>();
+    final model = context.watch<SavingsViewModel>();
     final p = model.progress;
     // Users who onboarded before reminders existed: ask once.
     if (model.reminder == null && !_reminderPrompted) {

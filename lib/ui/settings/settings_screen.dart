@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../../state/savings_model.dart';
-import '../denominations.dart';
-import '../palette.dart';
-import '../widgets/backdrop.dart';
-import '../widgets/reminder_picker.dart';
-import '../widgets/spinning_coin.dart';
+import 'package:quit_cash_mobile/ui/core/themes/denominations.dart';
+import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
+import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/backdrop.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/reminder_picker.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/spinning_coin.dart';
 
 /// Settings: denominations, reminders, reset. Opened from the HUD gear.
 class SettingsScreen extends StatelessWidget {
@@ -20,7 +19,7 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final model = context.watch<SavingsModel>();
+    final model = context.watch<SavingsViewModel>();
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -86,7 +85,10 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmReset(BuildContext context, SavingsModel model) async {
+  Future<void> _confirmReset(
+    BuildContext context,
+    SavingsViewModel model,
+  ) async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(

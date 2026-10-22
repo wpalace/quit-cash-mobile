@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../denominations.dart';
-import 'coin_painter.dart';
+import 'package:quit_cash_mobile/ui/core/themes/denominations.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/coin_painter.dart';
 
 /// Number that rolls smoothly to its new value (slot-machine feel).
 class TickingNumber extends StatelessWidget {

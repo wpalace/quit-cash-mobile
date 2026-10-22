@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../../game/progress.dart';
-import '../../state/savings_model.dart';
-import '../palette.dart';
-import 'home_screen.dart' show money;
+import 'package:quit_cash_mobile/domain/models/progress.dart';
+import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
+import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
+import 'package:quit_cash_mobile/ui/home/home_screen.dart' show money;
 
 class TrophiesScreen extends StatelessWidget {
   const TrophiesScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final model = context.watch<SavingsModel>();
+    final model = context.watch<SavingsViewModel>();
     final p = model.progress;
     final unlocked = p.unlocked;
     final next = achievements

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-
-import '../../game/progress.dart';
-import '../../state/savings_model.dart';
-import '../palette.dart';
-import 'effects.dart';
-import 'spinning_coin.dart';
+import 'package:quit_cash_mobile/domain/models/progress.dart';
+import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
+import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/effects.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/spinning_coin.dart';
 
 Future<void> showCelebration(
   BuildContext context,

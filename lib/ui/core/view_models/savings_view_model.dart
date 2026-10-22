@@ -1,12 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-
-import '../data/save_entry.dart';
-import '../data/savings_repository.dart';
-import '../game/progress.dart';
-import '../reminders/reminder_plan.dart';
-import '../reminders/reminder_service.dart';
+import 'package:quit_cash_mobile/data/repositories/savings_repository.dart';
+import 'package:quit_cash_mobile/data/services/reminder_service.dart';
+import 'package:quit_cash_mobile/domain/models/progress.dart';
+import 'package:quit_cash_mobile/domain/models/reminder_plan.dart';
+import 'package:quit_cash_mobile/domain/models/save_entry.dart';
 
 /// Events the UI celebrates once (level up, new badge).
 class Celebration {
@@ -16,8 +15,8 @@ class Celebration {
   bool get isEmpty => newLevel == null && badges.isEmpty;
 }
 
-class SavingsModel extends ChangeNotifier {
-  SavingsModel({
+class SavingsViewModel extends ChangeNotifier {
+  SavingsViewModel({
     required SavingsRepository repository,
     DateTime Function()? clock,
     ReminderService reminders = const NoopReminderService(),
