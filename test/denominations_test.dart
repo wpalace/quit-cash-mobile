@@ -99,25 +99,26 @@ void main() {
       expect(await PrefsSavingsRepository().loadFlag('show50'), isFalse);
     });
 
-    test('model defaults both on and reloads saved toggles', () async {
+    test('model defaults both off and reloads saved toggles', () async {
       final repo = PrefsSavingsRepository();
       final m1 = SavingsModel(repository: repo);
       await Future<void>.delayed(Duration.zero);
-      expect(m1.showFifty, isTrue);
-      expect(m1.showHundred, isTrue);
-      await m1.setShowFifty(false);
-      await m1.setShowHundred(false);
+      expect(m1.showFifty, isFalse);
+      expect(m1.showHundred, isFalse);
+      await m1.setShowFifty(true);
+      await m1.setShowHundred(true);
 
       final m2 = SavingsModel(repository: PrefsSavingsRepository());
       await Future<void>.delayed(const Duration(milliseconds: 10));
-      expect(m2.showFifty, isFalse);
-      expect(m2.showHundred, isFalse);
+      expect(m2.showFifty, isTrue);
+      expect(m2.showHundred, isTrue);
     });
 
     test('hiding a denomination keeps history', () async {
       final repo = InMemorySavingsRepository();
       final m = SavingsModel(repository: repo);
       await Future<void>.delayed(Duration.zero);
+      await m.setShowHundred(true);
       await m.addSavings(100);
       await m.setShowHundred(false);
       expect(m.progress.total, 100);

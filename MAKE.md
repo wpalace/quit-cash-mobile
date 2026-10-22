@@ -111,7 +111,7 @@ Follow the steps in sequence. Do not skip steps.
 13.2 Each denomination uses one `Metal` color ramp (light, base, deep, edge, outline). Coins, gem, sparkles, burst and flying coins use the same ramp.
 13.3 The $100 is a faceted gem (`GemPainter`), not a coin.
 13.4 The HUD counter icon is always the gold coin. Coins are the cosmetic currency.
-13.5 Settings has "Show $50" and "Show $100". Both are on by default. They are stored as `quitcash.flag.show50` and `quitcash.flag.show100`.
+13.5 Settings has "Show $50" and "Show $100". Both are OFF by default (opt-in). They are stored as `quitcash.flag.show50` and `quitcash.flag.show100`.
 13.6 Hidden denominations go out of the picker only. History, total and level do not change.
 13.7 If the selected denomination becomes hidden, the picker selects the largest visible one below it.
 13.8 Reset all progress is in Settings. Reset does not change settings.

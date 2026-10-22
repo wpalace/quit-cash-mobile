@@ -97,10 +97,23 @@ void main() {
     expect(find.text('DAILY BONUS!'), findsOneWidget);
   });
 
-  testWidgets('all six denominations are in the picker', (tester) async {
+  testWidgets('default picker hides \$50 and \$100', (tester) async {
     final repo = InMemorySavingsRepository()
       ..habit = 'Smoking'
       ..reminder = 'never';
+    await pumpApp(tester, repo: repo);
+    for (final d in [1, 5, 10, 20]) {
+      expect(find.byKey(Key('amount-$d')), findsOneWidget);
+    }
+    expect(find.byKey(const Key('amount-50')), findsNothing);
+    expect(find.byKey(const Key('amount-100')), findsNothing);
+  });
+
+  testWidgets('all six denominations when both enabled', (tester) async {
+    final repo = InMemorySavingsRepository()
+      ..habit = 'Smoking'
+      ..reminder = 'never';
+    repo.flags.addAll({'show50': true, 'show100': true});
     await pumpApp(tester, repo: repo);
     for (final d in [1, 5, 10, 20, 50, 100]) {
       expect(find.byKey(Key('amount-$d')), findsOneWidget);
@@ -111,6 +124,7 @@ void main() {
     final repo = InMemorySavingsRepository()
       ..habit = 'Smoking'
       ..reminder = 'never';
+    repo.flags['show100'] = true;
     final model = await pumpApp(tester, repo: repo);
     await tester.tap(find.byKey(const Key('amount-100')));
     await tester.pump();
@@ -129,6 +143,7 @@ void main() {
     final repo = InMemorySavingsRepository()
       ..habit = 'Smoking'
       ..reminder = 'never';
+    repo.flags.addAll({'show50': true, 'show100': true});
     final model = await pumpApp(tester, repo: repo);
     await tester.tap(find.byKey(const Key('amount-50')));
     await tester.pump();
