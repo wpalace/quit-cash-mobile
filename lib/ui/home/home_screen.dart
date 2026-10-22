@@ -308,8 +308,6 @@ class _Hud extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              _StreakPill(streak: progress.currentStreak),
-              const SizedBox(width: 8),
               _Pill(
                 color: Palette.gold,
                 child: Text(
@@ -361,25 +359,6 @@ class _DollarCounter extends StatelessWidget {
             duration: const Duration(milliseconds: 250),
             style: _hudLabel,
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StreakPill extends StatelessWidget {
-  const _StreakPill({required this.streak});
-  final int streak;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Pill(
-      key: const Key('streak'),
-      child: Row(
-        children: [
-          Text(streak > 0 ? '🔥' : '🩶', style: const TextStyle(fontSize: 20)),
-          const SizedBox(width: 4),
-          Text('$streak', style: _hudLabel),
         ],
       ),
     );
@@ -453,7 +432,7 @@ class _LevelProgress extends StatelessWidget {
 }
 
 class _Pill extends StatelessWidget {
-  const _Pill({super.key, required this.child, this.color = Palette.card});
+  const _Pill({required this.child, this.color = Palette.card});
   final Widget child;
   final Color color;
 

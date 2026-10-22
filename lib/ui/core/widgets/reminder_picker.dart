@@ -80,7 +80,7 @@ Future<void> showReminderPrompt(BuildContext context) {
           ),
           const SizedBox(height: 6),
           const Text(
-            'We can remind you at 7 pm to check in and keep your streak alive.',
+            'We can remind you at 7 pm to bank the dollars you saved.',
             style: TextStyle(color: Colors.white70),
           ),
           const SizedBox(height: 16),

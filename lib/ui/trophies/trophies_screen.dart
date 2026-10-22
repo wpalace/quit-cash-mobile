@@ -62,7 +62,7 @@ class _Summary extends StatelessWidget {
         Row(
           children: [
             _Stat('Total', money(p.total)),
-            _Stat('Best streak', '${p.bestStreak} d'),
+            _Stat('Level', '${p.level}'),
             _Stat('Badges', '${unlocked.length}/${achievements.length}'),
           ],
         ),

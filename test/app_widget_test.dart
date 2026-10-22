@@ -63,6 +63,7 @@ void main() {
     expect(find.text('TOTAL SAVED'), findsOneWidget);
     expect(find.text('\$0.00'), findsNWidgets(2)); // header + top bar
     expect(find.byKey(const Key('daily-bonus')), findsNothing);
+    expect(find.byKey(const Key('streak')), findsNothing);
   });
 
   testWidgets('tapping the coin banks money, flies coins, celebrates', (

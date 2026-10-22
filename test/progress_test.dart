@@ -9,16 +9,15 @@ void main() {
   final now = DateTime(2026, 10, 19, 12);
 
   test('empty log is level 1 with nothing unlocked', () {
-    final p = Progress.from(const [], now: now);
+    final p = Progress.from(const []);
     expect(p.total, 0);
     expect(p.level, 0);
     expect(p.rankTitle, 'Starter');
-    expect(p.currentStreak, 0);
     expect(p.unlocked, isEmpty);
   });
 
   test('totals and badges derive from dollars saved', () {
-    final p = Progress.from([save(5, now), save(20, now)], now: now);
+    final p = Progress.from([save(5, now), save(20, now)]);
     expect(p.totalCents, 2500);
     expect(p.level, 2); // $20 reached, $50 next
     expect(p.nextThreshold, 50);
@@ -29,24 +28,30 @@ void main() {
   test('a cents-only save below \$1 unlocks nothing', () {
     final p = Progress.from([
       SaveEntry(kind: EntryKind.save, cents: 50, at: now),
-    ], now: now);
+    ]);
     expect(p.unlocked, isEmpty);
   });
 
-  test('streak counts consecutive days and survives until tomorrow', () {
-    final days = [for (var i = 3; i >= 1; i--) now.subtract(Duration(days: i))];
-    final p = Progress.from([for (final d in days) save(1, d)], now: now);
-    expect(p.currentStreak, 3);
-    expect(p.bestStreak, 3);
-    expect(p.unlocked, contains('streak3'));
-  });
-
-  test('streak breaks after a missed day', () {
-    final p = Progress.from([
-      save(1, now.subtract(const Duration(days: 3))),
-    ], now: now);
-    expect(p.currentStreak, 0);
-    expect(p.bestStreak, 1);
+  test('badges are dollar milestones only', () {
+    expect(achievements.map((a) => a.id), [
+      'first',
+      'ten',
+      'twentyfive',
+      'fifty',
+      'hundred',
+      'lvl5',
+      'fivehundred',
+      'k',
+      'k2500',
+      'k5000',
+    ]);
+    final p = Progress.from([save(5000, now)]);
+    expect(p.unlocked, hasLength(achievements.length));
+    expect(
+      Progress.from([save(499, now)]).unlocked,
+      isNot(contains('fivehundred')),
+    );
+    expect(Progress.from([save(500, now)]).unlocked, contains('fivehundred'));
   });
 
   group('dollar milestone levels', () {
@@ -88,7 +93,7 @@ void main() {
     });
 
     test('progress bar spans current to next milestone', () {
-      final p = Progress.from([save(1500, now)], now: now);
+      final p = Progress.from([save(1500, now)]);
       expect(p.level, 7);
       expect(p.currentThreshold, 1000);
       expect(p.nextThreshold, 2000);

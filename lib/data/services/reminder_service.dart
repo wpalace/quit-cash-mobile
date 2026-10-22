@@ -17,11 +17,7 @@ abstract class ReminderService {
   Future<bool> requestPermission();
 
   /// Replace all queued reminders with a new batch for [frequency].
-  Future<void> schedule(
-    ReminderFrequency frequency, {
-    required int streak,
-    required int dollars,
-  });
+  Future<void> schedule(ReminderFrequency frequency, {required int dollars});
 }
 
 /// Used on web, in tests and on unsupported platforms: stores nothing,
@@ -38,7 +34,6 @@ class NoopReminderService implements ReminderService {
   @override
   Future<void> schedule(
     ReminderFrequency frequency, {
-    required int streak,
     required int dollars,
   }) async {}
 }
@@ -143,7 +138,6 @@ class LocalNotificationReminderService implements ReminderService {
   @override
   Future<void> schedule(
     ReminderFrequency frequency, {
-    required int streak,
     required int dollars,
   }) async {
     try {
@@ -152,7 +146,7 @@ class LocalNotificationReminderService implements ReminderService {
       final times = reminderTimes(DateTime.now(), frequency);
       for (var i = 0; i < times.length; i++) {
         final t = times[i];
-        final copy = reminderCopy(i, streak: streak, dollars: dollars);
+        final copy = reminderCopy(i, dollars: dollars);
         await _plugin.zonedSchedule(
           id: 1000 + i,
           title: copy.title,

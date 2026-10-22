@@ -25,7 +25,6 @@ class FakeReminders implements ReminderService {
   @override
   Future<void> schedule(
     ReminderFrequency frequency, {
-    required int streak,
     required int dollars,
   }) async => scheduled.add(frequency);
 }
@@ -91,26 +90,16 @@ void main() {
     });
   });
 
-  test('copy rotates and mentions streak and dollars', () {
-    final all = [
-      for (var i = 0; i < 5; i++) reminderCopy(i, streak: 4, dollars: 37),
-    ];
+  test('copy rotates and talks about dollars', () {
+    final all = [for (var i = 0; i < 5; i++) reminderCopy(i, dollars: 37)];
     expect(all.map((c) => c.title).toSet(), hasLength(5));
-    expect(all.any((c) => c.title.contains('4-day streak')), isTrue);
     expect(all.any((c) => c.title.contains('\$37 saved')), isTrue);
-    expect(reminderCopy(5, streak: 4, dollars: 37), all[0]);
-    expect(
-      reminderCopy(1, streak: 0, dollars: 0).title,
-      contains('new streak'),
-    );
-    expect(
-      reminderCopy(0, streak: 0, dollars: 0).title,
-      contains('first dollar'),
-    );
+    expect(reminderCopy(5, dollars: 37), all[0]);
+    expect(reminderCopy(0, dollars: 0).title, contains('first dollar'));
     for (final c in all) {
       expect(
         '${c.title} ${c.body}',
-        isNot(matches(RegExp('coin|bonus|check', caseSensitive: false))),
+        isNot(matches(RegExp('coin|bonus|check|streak', caseSensitive: false))),
       );
     }
   });
@@ -189,6 +178,6 @@ void main() {
     const s = NoopReminderService();
     expect(s.supported, isFalse);
     expect(await s.requestPermission(), isFalse);
-    await s.schedule(ReminderFrequency.daily, streak: 1, dollars: 1);
+    await s.schedule(ReminderFrequency.daily, dollars: 1);
   });
 }

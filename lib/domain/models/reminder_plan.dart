@@ -59,7 +59,7 @@ List<DateTime> reminderTimes(
 typedef ReminderCopy = ({String title, String body});
 
 /// On-brand rotating copy. [i] is the reminder's index in the batch.
-ReminderCopy reminderCopy(int i, {required int streak, required int dollars}) {
+ReminderCopy reminderCopy(int i, {required int dollars}) {
   final lines = <ReminderCopy>[
     dollars > 0
         ? (
@@ -70,15 +70,10 @@ ReminderCopy reminderCopy(int i, {required int streak, required int dollars}) {
             title: '💰 Your first dollar is waiting',
             body: 'Skip one craving today and bank what you saved.',
           ),
-    streak > 0
-        ? (
-            title: '🔥 $streak-day streak on the line!',
-            body: 'Bank a saving today to keep it burning.',
-          )
-        : (
-            title: '🔥 Light a new streak today',
-            body: 'Bank one saving today to start the fire.',
-          ),
+    (
+      title: '🐷 Bank today\'s savings',
+      body: 'Skipped something today? Add those dollars in QuitCash.',
+    ),
     (
       title: '✨ What did you not spend today?',
       body: 'Bank it in QuitCash. Every dollar counts.',

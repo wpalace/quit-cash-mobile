@@ -73,11 +73,7 @@ class SavingsViewModel extends ChangeNotifier {
     final f = _reminder;
     if (f == null) return;
     final p = progress;
-    await _reminders.schedule(
-      f,
-      streak: p.currentStreak,
-      dollars: p.totalCents ~/ 100,
-    );
+    await _reminders.schedule(f, dollars: p.totalCents ~/ 100);
   }
 
   bool _showFifty = false;
@@ -149,7 +145,7 @@ class SavingsViewModel extends ChangeNotifier {
   bool get isLoading => _loading;
   bool get loadError => _loadError;
   List<SaveEntry> get entries => _entries;
-  Progress get progress => Progress.from(_entries, now: _clock());
+  Progress get progress => Progress.from(_entries);
 
   Future<void> _load() async {
     _entries = _orElse('load history', await _repo.loadAll(), const []);

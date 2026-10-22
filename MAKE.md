@@ -64,7 +64,7 @@ Follow the steps in sequence. Do not skip steps.
 | Path | Purpose |
 |------|---------|
 | `lib/main.dart` | Entry point. Selects the repository. Installs global error handlers. |
-| `lib/domain/models/` | Immutable models and pure rules: `save_entry`, `progress` (levels, streaks, achievements), `reminder_plan`. |
+| `lib/domain/models/` | Immutable models and pure rules: `save_entry`, `progress` (levels, achievements), `reminder_plan`. |
 | `lib/data/repositories/` | `SavingsRepository` interface (returns `Result<T>`), on-device (`prefs_`) and `in_memory_` implementations. |
 | `lib/data/services/reminder_service.dart` | Local notification service (no-op on web). |
 | `lib/utils/` | `Result<T>` (`Ok`/`Error`) and `money()` formatting. |
@@ -97,9 +97,9 @@ Follow the steps in sequence. Do not skip steps.
 11.2 Level 0 ("Starter") is before the first $1.
 11.3 Thresholds: L1 $1, L2 $20, L3 $50, L4 $100, L5 $200, L6 $500, L7 $1000.
 11.4 After L7, each additional $1000 gives one level ($2000 = L8, $3000 = L9).
-11.5 The app tracks one thing: dollars saved. There is no daily check-in, bonus, coin currency or XP.
-11.6 Badges are dollar milestones: $1, $10, $25, $50, $100, Level 5 ($200), $1000 (plus streak badges, see 11.7).
-11.7 A save on a day keeps the streak alive.
+11.5 The app tracks one thing: dollars saved. There is no daily check-in, bonus, coin currency, XP or streak.
+11.6 Badges are dollar milestones only: $1, $10, $25, $50, $100, Level 5 ($200), $500, $1000, $2500, $5000.
+11.7 Streaks were removed (commit "remove streaks"). Revert that commit to restore them.
 11.8 The top-bar counter shows total dollars saved. It rolls up as the flying coins land.
 11.9 Old data may contain daily check-in rows (`"k": "checkIn"`). They are skipped on load (`SaveEntry.tryFromJson`) and dropped at the next save. They never counted as dollars.
 

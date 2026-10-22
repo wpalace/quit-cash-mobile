@@ -70,7 +70,7 @@ class SettingsScreen extends StatelessWidget {
       builder: (c) => AlertDialog(
         title: const Text('Reset everything?'),
         content: const Text(
-          'This deletes your savings history, streaks and badges on this device.',
+          'This deletes your savings history and badges on this device.',
         ),
         actions: [
           TextButton(
