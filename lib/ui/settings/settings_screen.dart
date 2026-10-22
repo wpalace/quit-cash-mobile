@@ -100,7 +100,7 @@ class _CoinToggles extends StatelessWidget {
           key: const Key('toggle-50'),
           denomination: denominationFor(50),
           title: 'Show \$50',
-          subtitle: 'Gold coin',
+          subtitle: 'Sapphire coin',
           value: model.showFifty,
           onChanged: model.setShowFifty,
         ),

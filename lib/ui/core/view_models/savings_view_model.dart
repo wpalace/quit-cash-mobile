@@ -79,7 +79,7 @@ class SavingsViewModel extends ChangeNotifier {
   bool _showFifty = false;
   bool _showHundred = false;
 
-  /// Settings: show the \$50 gold coin / \$100 ruby in the picker.
+  /// Settings: show the \$50 sapphire coin / \$100 ruby in the picker.
   /// Both default to off (opt-in). Hiding never touches saved history.
   bool get showFifty => _showFifty;
   bool get showHundred => _showHundred;

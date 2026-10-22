@@ -22,9 +22,9 @@ void main() {
       expect(bases, hasLength(denominations.length));
       expect(denominationFor(1).metal, Metals.copper);
       expect(denominationFor(5).metal, Metals.silver);
-      expect(denominationFor(10).metal, Metals.sapphire);
+      expect(denominationFor(10).metal, Metals.gold);
       expect(denominationFor(20).metal, Metals.emerald);
-      expect(denominationFor(50).metal, Metals.gold);
+      expect(denominationFor(50).metal, Metals.sapphire);
       expect(denominationFor(100).metal, Metals.ruby);
     });
 

@@ -90,14 +90,14 @@ class Denomination {
 const denominations = <Denomination>[
   Denomination(1, 'Copper', Metals.copper),
   Denomination(5, 'Silver', Metals.silver),
-  Denomination(10, 'Sapphire', Metals.sapphire),
-  Denomination(20, 'Emerald', Metals.emerald),
   defaultCoin,
+  Denomination(20, 'Emerald', Metals.emerald),
+  Denomination(50, 'Sapphire', Metals.sapphire),
   Denomination(100, 'Ruby', Metals.ruby, isGem: true),
 ];
 
 /// Gold coin: the HUD counter icon and default coin artwork.
-const defaultCoin = Denomination(50, 'Gold', Metals.gold);
+const defaultCoin = Denomination(10, 'Gold', Metals.gold);
 
 /// Denominations that can be hidden in Settings.
 const optionalDenominations = {50, 100};
