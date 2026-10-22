@@ -39,7 +39,7 @@ class SettingsScreen extends StatelessWidget {
               const Text('🪙 Coins', style: _heading),
               const SizedBox(height: 4),
               const Text(
-                'Hide big coins you never use. Your history stays the same.',
+                'Unlock bigger coins for big wins. Your history stays the same.',
                 style: TextStyle(color: Colors.white60),
               ),
               const SizedBox(height: 8),
