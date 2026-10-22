@@ -78,14 +78,17 @@ class SavingsViewModel extends ChangeNotifier {
 
   bool _showFifty = false;
   bool _showHundred = false;
+  bool _showFiveHundred = false;
 
-  /// Settings: show the \$50 sapphire coin / \$100 ruby in the picker.
-  /// Both default to off (opt-in). Hiding never touches saved history.
+  /// Settings: show the \$50 sapphire coin / \$100 ruby / \$500 diamond in the picker.
+  /// All three default to off (opt-in). Hiding never touches saved history.
   bool get showFifty => _showFifty;
   bool get showHundred => _showHundred;
+  bool get showFiveHundred => _showFiveHundred;
 
   static const showFiftyKey = 'show50';
   static const showHundredKey = 'show100';
+  static const showFiveHundredKey = 'show500';
 
   Future<void> setShowFifty(bool value) async {
     _showFifty = value;
@@ -100,8 +103,11 @@ class SavingsViewModel extends ChangeNotifier {
   }
 
   /// Picker denominations after the Settings toggles.
-  List<Denomination> get pickerDenominations =>
-      visibleDenominations(showFifty: _showFifty, showHundred: _showHundred);
+  List<Denomination> get pickerDenominations => visibleDenominations(
+    showFifty: _showFifty,
+    showHundred: _showHundred,
+    showFiveHundred: _showFiveHundred,
+  );
 
   /// The denomination to show for a requested amount: the largest visible
   /// one at or below it (Settings may have hidden the requested one).
@@ -130,6 +136,12 @@ class SavingsViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> setShowFiveHundred(bool value) async {
+    _showFiveHundred = value;
+    notifyListeners();
+    _report('save setting', await _repo.saveFlag(showFiveHundredKey, value));
+  }
+
   bool get isLoading => _loading;
   bool get loadError => _loadError;
   List<SaveEntry> get entries => _entries;
@@ -146,6 +158,13 @@ class SavingsViewModel extends ChangeNotifier {
         false;
     _showHundred =
         _orElse('load setting', await _repo.loadFlag(showHundredKey), null) ??
+        false;
+    _showFiveHundred =
+        _orElse(
+          'load setting',
+          await _repo.loadFlag(showFiveHundredKey),
+          null,
+        ) ??
         false;
     _loading = false;
     notifyListeners();

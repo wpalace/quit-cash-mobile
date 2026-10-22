@@ -7,14 +7,15 @@ import 'package:quit_cash_mobile/data/repositories/prefs_savings_repository.dart
 import 'package:quit_cash_mobile/ui/core/themes/denominations.dart';
 import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/coin_painter.dart';
+import 'package:quit_cash_mobile/ui/core/widgets/diamond_painter.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 void main() {
   group('denominations', () {
-    test('six denominations in ascending order', () {
-      expect(denominations.map((d) => d.dollars), [1, 5, 10, 20, 50, 100]);
-      expect(denominations.map((d) => d.label).last, '\$100');
+    test('seven denominations in ascending order', () {
+      expect(denominations.map((d) => d.dollars), [1, 5, 10, 20, 50, 100, 500]);
+      expect(denominations.map((d) => d.label).last, '\$500');
     });
 
     test('each denomination has its own color', () {
@@ -53,9 +54,13 @@ void main() {
       }
     });
 
-    test('only the \$100 is a gem', () {
-      expect(denominations.where((d) => d.isGem).map((d) => d.dollars), [100]);
+    test('the \$100 ruby and \$500 diamond are the only gems', () {
+      expect(denominations.where((d) => d.isGem).map((d) => d.dollars), [
+        100,
+        500,
+      ]);
       expect(painterFor(denominationFor(100), angle: 0), isA<GemPainter>());
+      expect(painterFor(denominationFor(500), angle: 0), isA<DiamondPainter>());
       expect(painterFor(denominationFor(20), angle: 0), isA<CoinPainter>());
     });
 
@@ -75,15 +80,25 @@ void main() {
   });
 
   group('picker filtering', () {
-    List<int> vis(bool f, bool h) => [
-      for (final d in visibleDenominations(showFifty: f, showHundred: h))
+    List<int> vis(bool f, bool h, [bool d5 = false]) => [
+      for (final d in visibleDenominations(
+        showFifty: f,
+        showHundred: h,
+        showFiveHundred: d5,
+      ))
         d.dollars,
     ];
 
-    test('both on', () => expect(vis(true, true), [1, 5, 10, 20, 50, 100]));
+    test('all on', () {
+      expect(vis(true, true, true), [1, 5, 10, 20, 50, 100, 500]);
+    });
+    test('hide 500', () => expect(vis(true, true), [1, 5, 10, 20, 50, 100]));
     test('hide 50', () => expect(vis(false, true), [1, 5, 10, 20, 100]));
     test('hide 100', () => expect(vis(true, false), [1, 5, 10, 20, 50]));
-    test('hide both', () => expect(vis(false, false), [1, 5, 10, 20]));
+    test('hide all', () => expect(vis(false, false), [1, 5, 10, 20]));
+    test('only 500', () {
+      expect(vis(false, false, true), [1, 5, 10, 20, 500]);
+    });
   });
 
   group('settings persistence', () {
@@ -102,19 +117,22 @@ void main() {
       );
     });
 
-    test('model defaults both off and reloads saved toggles', () async {
+    test('model defaults all off and reloads saved toggles', () async {
       final repo = PrefsSavingsRepository();
       final m1 = SavingsViewModel(repository: repo);
       await Future<void>.delayed(Duration.zero);
       expect(m1.showFifty, isFalse);
       expect(m1.showHundred, isFalse);
+      expect(m1.showFiveHundred, isFalse);
       await m1.setShowFifty(true);
       await m1.setShowHundred(true);
+      await m1.setShowFiveHundred(true);
 
       final m2 = SavingsViewModel(repository: PrefsSavingsRepository());
       await Future<void>.delayed(const Duration(milliseconds: 10));
       expect(m2.showFifty, isTrue);
       expect(m2.showHundred, isTrue);
+      expect(m2.showFiveHundred, isTrue);
     });
 
     test('hiding a denomination keeps history', () async {
@@ -127,5 +145,12 @@ void main() {
       expect(m.progress.total, 100);
       expect((await repo.loadAll()).valueOrNull, hasLength(1));
     });
+  });
+
+  test('diamond is icy white-blue', () {
+    final hsv = HSVColor.fromColor(Metals.diamond.base);
+    expect(hsv.hue, inInclusiveRange(180, 220));
+    expect(hsv.saturation, lessThan(0.3));
+    expect(hsv.value, greaterThan(0.9));
   });
 }

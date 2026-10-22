@@ -112,6 +112,14 @@ class _CoinToggles extends StatelessWidget {
           value: model.showHundred,
           onChanged: model.setShowHundred,
         ),
+        _DenomSwitch(
+          key: const Key('toggle-500'),
+          denomination: denominationFor(500),
+          title: 'Show \$500',
+          subtitle: 'Diamond gem',
+          value: model.showFiveHundred,
+          onChanged: model.setShowFiveHundred,
+        ),
       ],
     );
   }

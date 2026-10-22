@@ -71,18 +71,44 @@ abstract final class Metals {
     edge: Color(0xFF5E0016),
     outline: Color(0xFF33000B),
   );
+  static const diamond = Metal(
+    light: Color(0xFFFFFFFF),
+    base: Color(0xFFD6F1FF),
+    deep: Color(0xFF8CC4EA),
+    edge: Color(0xFF4E86B5),
+    outline: Color(0xFF173352),
+  );
+}
+
+/// How a denomination is drawn.
+enum Cut {
+  /// Spinning coin.
+  coin,
+
+  /// Cushion-cut colored gem (ruby).
+  cushion,
+
+  /// Round brilliant (diamond) with rainbow fire.
+  brilliant,
 }
 
 @immutable
 class Denomination {
-  const Denomination(this.dollars, this.name, this.metal, {this.isGem = false});
+  const Denomination(
+    this.dollars,
+    this.name,
+    this.metal, {
+    this.cut = Cut.coin,
+  });
 
   final int dollars;
   final String name;
   final Metal metal;
 
+  final Cut cut;
+
   /// Drawn as a faceted gem instead of a coin.
-  final bool isGem;
+  bool get isGem => cut != Cut.coin;
 
   String get label => '\$$dollars';
 }
@@ -93,14 +119,15 @@ const denominations = <Denomination>[
   defaultCoin,
   Denomination(20, 'Emerald', Metals.emerald),
   Denomination(50, 'Sapphire', Metals.sapphire),
-  Denomination(100, 'Ruby', Metals.ruby, isGem: true),
+  Denomination(100, 'Ruby', Metals.ruby, cut: Cut.cushion),
+  Denomination(500, 'Diamond', Metals.diamond, cut: Cut.brilliant),
 ];
 
 /// Gold coin: the HUD counter icon and default coin artwork.
 const defaultCoin = Denomination(10, 'Gold', Metals.gold);
 
 /// Denominations that can be hidden in Settings.
-const optionalDenominations = {50, 100};
+const optionalDenominations = {50, 100, 500};
 
 Denomination denominationFor(num dollars) => denominations.firstWhere(
   (d) => d.dollars == dollars,
@@ -111,7 +138,14 @@ Denomination denominationFor(num dollars) => denominations.firstWhere(
 List<Denomination> visibleDenominations({
   required bool showFifty,
   required bool showHundred,
+  required bool showFiveHundred,
 }) => [
   for (final d in denominations)
-    if ((d.dollars != 50 || showFifty) && (d.dollars != 100 || showHundred)) d,
+    if (switch (d.dollars) {
+      50 => showFifty,
+      100 => showHundred,
+      500 => showFiveHundred,
+      _ => true,
+    })
+      d,
 ];

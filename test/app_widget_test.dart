@@ -111,13 +111,13 @@ void main() {
     expect(find.byKey(const Key('amount-100')), findsNothing);
   });
 
-  testWidgets('all six denominations when both enabled', (tester) async {
+  testWidgets('all seven denominations when all enabled', (tester) async {
     final repo = InMemorySavingsRepository()
       ..habit = 'Smoking'
       ..reminder = 'never';
-    repo.flags.addAll({'show50': true, 'show100': true});
+    repo.flags.addAll({'show50': true, 'show100': true, 'show500': true});
     await pumpApp(tester, repo: repo);
-    for (final d in [1, 5, 10, 20, 50, 100]) {
+    for (final d in [1, 5, 10, 20, 50, 100, 500]) {
       expect(find.byKey(Key('amount-$d')), findsOneWidget);
     }
   });
@@ -137,6 +137,39 @@ void main() {
     }
     expect(model.progress.total, 100);
     expect(model.progress.coins, 100);
+  });
+
+  testWidgets('diamond is off by default and banks \$500', (tester) async {
+    final repo = InMemorySavingsRepository()
+      ..habit = 'Smoking'
+      ..reminder = 'never';
+    final model = await pumpApp(tester, repo: repo);
+    expect(find.byKey(const Key('amount-500')), findsNothing);
+    await tester.tap(find.byKey(const Key('settings')));
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.ensureVisible(find.byKey(const Key('toggle-500')));
+    await tester.tap(find.byKey(const Key('toggle-500')));
+    await tester.pump();
+    expect(model.showFiveHundred, isTrue);
+    expect(repo.flags['show500'], isTrue);
+    await tester.pageBack();
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    await tester.tap(find.byKey(const Key('amount-500')));
+    await tester.pump();
+    expect(find.text('TAP TO BANK \$500'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('hero-coin')));
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    expect(model.progress.total, 500);
+    expect(model.progress.coins, 500);
   });
 
   testWidgets('settings toggles hide \$50 and \$100 from the picker', (

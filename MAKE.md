@@ -55,7 +55,7 @@ Follow the steps in sequence. Do not skip steps.
 ## 7. Make the coin animation (optional)
 
 7.1 Run: `flutter test tool/coin_frames_test.dart --dart-define=OUT=/tmp/frames`
-    - Optional: add `--dart-define=DENOM=100` for the ruby (1, 5, 10, 20, 50 also work).
+    - Optional: add `--dart-define=DENOM=100` for the ruby or `DENOM=500` for the diamond (1, 5, 10, 20, 50 also work).
     - The tool also writes `/tmp/frames/sheet.png` with all denominations.
 7.2 Run: `ffmpeg -framerate 30 -i /tmp/frames/f%03d.png -loop 0 coin-spin.gif`
 
@@ -70,7 +70,7 @@ Follow the steps in sequence. Do not skip steps.
 | `lib/utils/` | `Result<T>` (`Ok`/`Error`) and `money()` formatting. |
 | `lib/ui/core/view_models/savings_view_model.dart` | App-wide view model (`ChangeNotifier`). Returns celebrations. |
 | `lib/ui/core/themes/` | Palette, denominations and metal color ramps, picker filter. |
-| `lib/ui/core/widgets/` | Shared widgets: coin and gem painters, spinning coin, flying coin, burst, coin rain, ticking number, reminder picker, celebration dialog, backdrop. |
+| `lib/ui/core/widgets/` | Shared widgets: coin, ruby and diamond painters (`diamond_painter.dart`), spinning coin, flying coin, burst, coin rain, ticking number, reminder picker, celebration dialog, backdrop. |
 | `lib/ui/app/`, `lib/ui/home/`, `lib/ui/onboarding/`, `lib/ui/trophies/`, `lib/ui/settings/` | App shell and one folder per screen. |
 | `test/` | Unit, widget and golden (`test/goldens/`) tests. |
 | `integration_test/`, `test_driver/` | End-to-end flow (MAKE.md 4.6). |
@@ -117,11 +117,11 @@ Follow the steps in sequence. Do not skip steps.
 
 ## 13. Denominations and Settings
 
-13.1 Denominations: $1 copper, $5 silver, $10 gold, $20 emerald, $50 sapphire, $100 ruby gem.
+13.1 Denominations: $1 copper, $5 silver, $10 gold, $20 emerald, $50 sapphire, $100 ruby gem, $500 diamond gem.
 13.2 Each denomination uses one `Metal` color ramp (light, base, deep, edge, outline). Coins, gem, sparkles, burst and flying coins use the same ramp.
-13.3 The $100 is a faceted gem (`GemPainter`), not a coin.
+13.3 The $100 is a cushion-cut ruby (`GemPainter`) and the $500 is a round brilliant diamond (`DiamondPainter`: icy white/blue facets, rainbow fire glints). `Denomination.cut` (`Cut.coin`, `Cut.cushion`, `Cut.brilliant`) selects the painter in `painterFor`. Both gems use the same tap, burst and fly-to-counter flow as the coins.
 13.4 The HUD counter icon is always the gold ($10) coin. Coins are the cosmetic currency.
-13.5 Settings has "Show $50" and "Show $100". Both are OFF by default (opt-in). They are stored as `quitcash.flag.show50` and `quitcash.flag.show100`.
+13.5 Settings has "Show $50", "Show $100" and "Show $500". All are OFF by default (opt-in). They are stored as `quitcash.flag.show50`, `quitcash.flag.show100` and `quitcash.flag.show500`.
 13.6 Hidden denominations go out of the picker only. History, total and level do not change.
 13.7 If the selected denomination becomes hidden, the picker selects the largest visible one below it.
 13.8 Reset all progress is in Settings. Reset does not change settings.
