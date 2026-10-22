@@ -1,11 +1,15 @@
 import 'dart:async';
 
+import 'dart:developer' as developer;
+
 import 'package:flutter/foundation.dart';
 import 'package:quit_cash_mobile/data/repositories/savings_repository.dart';
 import 'package:quit_cash_mobile/data/services/reminder_service.dart';
 import 'package:quit_cash_mobile/domain/models/progress.dart';
 import 'package:quit_cash_mobile/domain/models/reminder_plan.dart';
 import 'package:quit_cash_mobile/domain/models/save_entry.dart';
+import 'package:quit_cash_mobile/ui/core/themes/denominations.dart';
+import 'package:quit_cash_mobile/utils/result.dart';
 
 /// Events the UI celebrates once (level up, new badge).
 class Celebration {
@@ -15,6 +19,10 @@ class Celebration {
   bool get isEmpty => newLevel == null && badges.isEmpty;
 }
 
+void _logFailure(String what, Object error) =>
+    developer.log('$what failed', name: 'quitcash', error: error);
+
+/// App-wide view model: savings, progress, settings and reminders.
 class SavingsViewModel extends ChangeNotifier {
   SavingsViewModel({
     required SavingsRepository repository,
@@ -23,7 +31,7 @@ class SavingsViewModel extends ChangeNotifier {
   }) : _repo = repository,
        _reminders = reminders,
        _clock = clock ?? DateTime.now {
-    _load();
+    unawaited(_load());
   }
 
   final SavingsRepository _repo;
@@ -39,7 +47,7 @@ class SavingsViewModel extends ChangeNotifier {
   Future<void> setHabit(String value) async {
     _habit = value;
     notifyListeners();
-    await _repo.saveHabit(value);
+    _report('save habit', await _repo.saveHabit(value));
   }
 
   ReminderFrequency? _reminder;
@@ -53,7 +61,7 @@ class SavingsViewModel extends ChangeNotifier {
   Future<bool> setReminder(ReminderFrequency f) async {
     _reminder = f;
     notifyListeners();
-    await _repo.saveReminder(f.name);
+    _report('save reminder', await _repo.saveReminder(f.name));
     var granted = true;
     if (f.enabled && _reminders.supported) {
       granted = await _reminders.requestPermission();
@@ -66,11 +74,7 @@ class SavingsViewModel extends ChangeNotifier {
     final f = _reminder;
     if (f == null) return;
     final p = progress;
-    try {
-      await _reminders.schedule(f, streak: p.currentStreak, coins: p.coins);
-    } catch (e) {
-      debugPrint('QuitCash: reminder scheduling failed: $e');
-    }
+    await _reminders.schedule(f, streak: p.currentStreak, coins: p.coins);
   }
 
   bool _showFifty = false;
@@ -87,13 +91,46 @@ class SavingsViewModel extends ChangeNotifier {
   Future<void> setShowFifty(bool value) async {
     _showFifty = value;
     notifyListeners();
-    await _repo.saveFlag(showFiftyKey, value);
+    _report('save setting', await _repo.saveFlag(showFiftyKey, value));
   }
 
   Future<void> setShowHundred(bool value) async {
     _showHundred = value;
     notifyListeners();
-    await _repo.saveFlag(showHundredKey, value);
+    _report('save setting', await _repo.saveFlag(showHundredKey, value));
+  }
+
+  /// Picker denominations after the Settings toggles.
+  List<Denomination> get pickerDenominations => visibleDenominations(
+    showFifty: _showFifty,
+    showHundred: _showHundred,
+  );
+
+  /// The denomination to show for a requested amount: the largest visible
+  /// one at or below it (Settings may have hidden the requested one).
+  Denomination denominationForPick(int dollars) {
+    final visible = pickerDenominations;
+    return visible.lastWhere(
+      (d) => d.dollars <= dollars,
+      orElse: () => visible.first,
+    );
+  }
+
+  /// Logs a failed write; the in-memory state stays as the user set it.
+  void _report(String what, Result<void> r) {
+    if (r case Error(:final error)) _logFailure(what, error);
+  }
+
+  /// Value of [r], or [fallback] (and a load error) on failure.
+  T _orElse<T>(String what, Result<T> r, T fallback) {
+    switch (r) {
+      case Ok(:final value):
+        return value;
+      case Error(:final error):
+        _logFailure(what, error);
+        _loadError = true;
+        return fallback;
+    }
   }
 
   bool get isLoading => _loading;
@@ -102,16 +139,17 @@ class SavingsViewModel extends ChangeNotifier {
   Progress get progress => Progress.from(_entries, now: _clock());
 
   Future<void> _load() async {
-    try {
-      _entries = await _repo.loadAll();
-      _habit = await _repo.loadHabit();
-      _reminder = ReminderFrequency.tryParse(await _repo.loadReminder());
-      _showFifty = await _repo.loadFlag(showFiftyKey) ?? false;
-      _showHundred = await _repo.loadFlag(showHundredKey) ?? false;
-    } catch (e) {
-      debugPrint('QuitCash: load failed: $e');
-      _loadError = true;
-    }
+    _entries = _orElse('load history', await _repo.loadAll(), const []);
+    _habit = _orElse('load habit', await _repo.loadHabit(), null);
+    _reminder = ReminderFrequency.tryParse(
+      _orElse('load reminder', await _repo.loadReminder(), null),
+    );
+    _showFifty =
+        _orElse('load setting', await _repo.loadFlag(showFiftyKey), null) ??
+        false;
+    _showHundred =
+        _orElse('load setting', await _repo.loadFlag(showHundredKey), null) ??
+        false;
     _loading = false;
     notifyListeners();
     // Refresh the queued batch (and its streak/coin copy) on every launch.
@@ -139,10 +177,8 @@ class SavingsViewModel extends ChangeNotifier {
 
   Future<Celebration?> _record(SaveEntry e) async {
     final before = progress;
-    try {
-      await _repo.append(e);
-    } catch (err) {
-      debugPrint('QuitCash: save failed: $err');
+    if (await _repo.append(e) case Error(:final error)) {
+      _logFailure('save entry', error);
       return null;
     }
     _entries = [..._entries, e];
@@ -160,7 +196,10 @@ class SavingsViewModel extends ChangeNotifier {
   }
 
   Future<void> reset() async {
-    await _repo.clear();
+    if (await _repo.clear() case Error(:final error)) {
+      _logFailure('reset', error);
+      return;
+    }
     _entries = const [];
     notifyListeners();
   }

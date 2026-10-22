@@ -2,8 +2,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quit_cash_mobile/data/repositories/in_memory_savings_repository.dart';
 import 'package:quit_cash_mobile/data/repositories/prefs_savings_repository.dart';
-import 'package:quit_cash_mobile/data/repositories/savings_repository.dart';
 import 'package:quit_cash_mobile/ui/core/themes/denominations.dart';
 import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/coin_painter.dart';
@@ -94,9 +94,9 @@ void main() {
 
     test('prefs repository stores flags', () async {
       final repo = PrefsSavingsRepository();
-      expect(await repo.loadFlag('show50'), isNull);
+      expect((await repo.loadFlag('show50')).valueOrNull, isNull);
       await repo.saveFlag('show50', false);
-      expect(await PrefsSavingsRepository().loadFlag('show50'), isFalse);
+      expect((await PrefsSavingsRepository().loadFlag('show50')).valueOrNull, isFalse);
     });
 
     test('model defaults both off and reloads saved toggles', () async {
@@ -122,7 +122,7 @@ void main() {
       await m.addSavings(100);
       await m.setShowHundred(false);
       expect(m.progress.total, 100);
-      expect(await repo.loadAll(), hasLength(1));
+      expect((await repo.loadAll()).valueOrNull, hasLength(1));
     });
   });
 }

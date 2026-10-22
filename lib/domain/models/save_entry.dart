@@ -16,7 +16,7 @@ class SaveEntry {
     't': at.millisecondsSinceEpoch,
   };
 
-  factory SaveEntry.fromJson(Map<String, dynamic> json) => SaveEntry(
+  factory SaveEntry.fromJson(Map<String, Object?> json) => SaveEntry(
     kind: EntryKind.values.byName(json['k'] as String),
     cents: json['c'] as int,
     at: DateTime.fromMillisecondsSinceEpoch(json['t'] as int),

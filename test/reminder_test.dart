@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:quit_cash_mobile/data/repositories/in_memory_savings_repository.dart';
 import 'package:quit_cash_mobile/data/repositories/prefs_savings_repository.dart';
-import 'package:quit_cash_mobile/data/repositories/savings_repository.dart';
 import 'package:quit_cash_mobile/data/services/reminder_service.dart';
 import 'package:quit_cash_mobile/domain/models/reminder_plan.dart';
 import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
@@ -113,9 +113,9 @@ void main() {
   test('prefs repository persists the reminder choice', () async {
     SharedPreferencesAsyncPlatform.instance =
         InMemorySharedPreferencesAsync.empty();
-    expect(await PrefsSavingsRepository().loadReminder(), isNull);
+    expect((await PrefsSavingsRepository().loadReminder()).valueOrNull, isNull);
     await PrefsSavingsRepository().saveReminder('weekly');
-    expect(await PrefsSavingsRepository().loadReminder(), 'weekly');
+    expect((await PrefsSavingsRepository().loadReminder()).valueOrNull, 'weekly');
   });
 
   group('model', () {

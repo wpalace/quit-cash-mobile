@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:quit_cash_mobile/data/repositories/savings_repository.dart';
 import 'package:quit_cash_mobile/domain/models/save_entry.dart';
+import 'package:quit_cash_mobile/utils/result.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// On-device repository backed by shared_preferences (NSUserDefaults on iOS,
@@ -13,53 +14,65 @@ class PrefsSavingsRepository implements SavingsRepository {
     : _prefs = prefs ?? SharedPreferencesAsync();
 
   static const storageKey = 'quitcash.entries.v1';
+  static const habitKey = 'quitcash.habit.v1';
+  static const reminderKey = 'quitcash.reminder.v1';
+  static String flagKey(String key) => 'quitcash.flag.$key';
+
   final SharedPreferencesAsync _prefs;
 
-  @override
-  Future<List<SaveEntry>> loadAll() async {
+  Future<List<SaveEntry>> _read() async {
     final raw = await _prefs.getString(storageKey);
     if (raw == null || raw.isEmpty) return const [];
-    final list = jsonDecode(raw) as List<dynamic>;
-    return [
-      for (final row in list) SaveEntry.fromJson(row as Map<String, dynamic>),
-    ];
+    try {
+      final list = jsonDecode(raw) as List<Object?>;
+      return [
+        for (final row in list)
+          SaveEntry.fromJson(row as Map<String, Object?>),
+      ];
+    } on TypeError catch (e) {
+      throw FormatException('Unreadable savings history: $e');
+    } on ArgumentError catch (e) {
+      // Corrupt or foreign data: report as a recoverable format failure.
+      throw FormatException('Unreadable savings history: $e');
+    }
   }
 
   @override
-  Future<void> append(SaveEntry entry) async {
-    final rows = [...await loadAll(), entry];
+  Future<Result<List<SaveEntry>>> loadAll() => guard(_read);
+
+  @override
+  Future<Result<void>> append(SaveEntry entry) => guard(() async {
+    final rows = [...await _read(), entry];
     await _prefs.setString(
       storageKey,
       jsonEncode([for (final r in rows) r.toJson()]),
     );
-  }
+  });
 
   @override
-  Future<void> clear() => _prefs.remove(storageKey);
-
-  static const habitKey = 'quitcash.habit.v1';
+  Future<Result<void>> clear() => guard(() => _prefs.remove(storageKey));
 
   @override
-  Future<String?> loadHabit() => _prefs.getString(habitKey);
+  Future<Result<String?>> loadHabit() =>
+      guard(() => _prefs.getString(habitKey));
 
   @override
-  Future<void> saveHabit(String habit) => _prefs.setString(habitKey, habit);
-
-  static const reminderKey = 'quitcash.reminder.v1';
-
-  @override
-  Future<String?> loadReminder() => _prefs.getString(reminderKey);
+  Future<Result<void>> saveHabit(String habit) =>
+      guard(() => _prefs.setString(habitKey, habit));
 
   @override
-  Future<void> saveReminder(String frequency) =>
-      _prefs.setString(reminderKey, frequency);
-
-  static String flagKey(String key) => 'quitcash.flag.$key';
+  Future<Result<String?>> loadReminder() =>
+      guard(() => _prefs.getString(reminderKey));
 
   @override
-  Future<bool?> loadFlag(String key) => _prefs.getBool(flagKey(key));
+  Future<Result<void>> saveReminder(String frequency) =>
+      guard(() => _prefs.setString(reminderKey, frequency));
 
   @override
-  Future<void> saveFlag(String key, bool value) =>
-      _prefs.setBool(flagKey(key), value);
+  Future<Result<bool?>> loadFlag(String key) =>
+      guard(() => _prefs.getBool(flagKey(key)));
+
+  @override
+  Future<Result<void>> saveFlag(String key, bool value) =>
+      guard(() => _prefs.setBool(flagKey(key), value));
 }

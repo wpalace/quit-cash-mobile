@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -86,8 +88,8 @@ class LocalNotificationReminderService implements ReminderService {
     try {
       final info = await FlutterTimezone.getLocalTimezone();
       tz.setLocalLocation(tz.getLocation(info.identifier));
-    } catch (e) {
-      debugPrint('QuitCash: timezone lookup failed, using UTC: $e');
+    } on Exception catch (e) {
+      developer.log('timezone lookup failed', name: 'quitcash', error: e);
     }
     const darwin = DarwinInitializationSettings(
       requestAlertPermission: false,
@@ -132,8 +134,8 @@ class LocalNotificationReminderService implements ReminderService {
             MacOSFlutterLocalNotificationsPlugin
           >();
       return await mac?.requestPermissions(alert: true, sound: true) ?? false;
-    } catch (e) {
-      debugPrint('QuitCash: permission request failed: $e');
+    } on Exception catch (e) {
+      developer.log('permission request failed', name: 'quitcash', error: e);
       return false;
     }
   }
@@ -166,8 +168,8 @@ class LocalNotificationReminderService implements ReminderService {
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         );
       }
-    } catch (e) {
-      debugPrint('QuitCash: scheduling reminders failed: $e');
+    } on Exception catch (e) {
+      developer.log('scheduling reminders failed', name: 'quitcash', error: e);
     }
   }
 }
