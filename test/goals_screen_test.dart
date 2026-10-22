@@ -122,6 +122,7 @@ void main() {
     await tester.tap(find.byKey(const Key('settings')));
     await settle(tester);
     await tester.ensureVisible(find.byKey(const Key('reset')));
+    await settle(tester, 3);
     expect(find.text('Reset "Vaping" progress'), findsOneWidget);
     await tester.tap(find.byKey(const Key('reset')));
     await settle(tester);

@@ -64,14 +64,14 @@ Follow the steps in sequence. Do not skip steps.
 | Path | Purpose |
 |------|---------|
 | `lib/main.dart` | Entry point. Selects the repository. Installs global error handlers. |
-| `lib/domain/models/` | Immutable models and pure rules: `goal`, `habits`, `save_entry`, `progress` (levels, achievements), `reminder_plan`. |
+| `lib/domain/models/` | Immutable models and pure rules: `goal`, `habits`, `save_entry`, `tap_cluster`, `progress` (levels, achievements), `reminder_plan`. |
 | `lib/data/repositories/` | `SavingsRepository` interface (returns `Result<T>`), on-device (`prefs_`) and `in_memory_` implementations. |
 | `lib/data/services/reminder_service.dart` | Local notification service (no-op on web). |
 | `lib/utils/` | `Result<T>` (`Ok`/`Error`) and `money()` formatting. |
 | `lib/ui/core/view_models/savings_view_model.dart` | App-wide view model (`ChangeNotifier`). Returns celebrations. |
 | `lib/ui/core/themes/` | Palette, denominations and metal color ramps, picker filter. |
 | `lib/ui/core/widgets/` | Shared widgets: coin, ruby and diamond painters (`diamond_painter.dart`), spinning coin, flying coin, burst, coin rain, ticking number, reminder picker, celebration dialog, backdrop. |
-| `lib/ui/app/`, `lib/ui/home/`, `lib/ui/goals/`, `lib/ui/onboarding/`, `lib/ui/trophies/`, `lib/ui/settings/` | App shell (tabs: Bank, Goals, Trophies) and one folder per screen. |
+| `lib/ui/app/`, `lib/ui/home/`, `lib/ui/goals/`, `lib/ui/history/`, `lib/ui/onboarding/`, `lib/ui/trophies/`, `lib/ui/settings/` | App shell (tabs: Bank, Goals, Trophies) and one folder per screen. |
 | `test/` | Unit, widget and golden (`test/goldens/`) tests. |
 | `integration_test/`, `test_driver/` | End-to-end flow (MAKE.md 4.6). |
 | `.standards/`, `.standards-version`, `.standards-exclude`, `AGENTS.md` | House coding standard (vendored, do not edit). |
@@ -136,5 +136,19 @@ Follow the steps in sequence. Do not skip steps.
 14.4 Delete a goal: trash icon, then a destructive confirm. If the active goal is deleted, the first remaining goal becomes active.
 14.5 Deleting the last goal returns to onboarding. Global settings stay: the coin toggles and the reminder choice (onboarding preselects the saved choice, so the user can keep or change it).
 14.6 Settings (coin toggles, reminders) are global, not per goal.
-14.7 Storage: `quitcash.goals.v1` (JSON list), `quitcash.goal.active.v1`, `quitcash.goal.<id>.entries.v1`.
+14.7 Storage: `quitcash.goals.v1` (JSON list), `quitcash.goal.active.v1`, `quitcash.goal.<id>.entries.v2` (clustered records, see 15).
 14.8 Migration: single-goal data (`quitcash.habit.v1` + `quitcash.entries.v1`) becomes goal `g1`, active. The history string is copied verbatim, the goals list is written last (an interrupted migration re-runs), then the legacy keys are removed. Tested in `test/repository_test.dart`.
+
+## 15. Tap clustering and History
+
+15.1 Money is stored as integer cents (`SaveEntry.cents`). Each record has a stable `id`.
+15.2 Taps join one record when each tap comes within the grouping window of the previous tap in the same goal (sliding window, inclusive). The record's time is the FIRST tap's time; its amount is the sum. A record never exceeds $9,999.99; a tap that would overflow starts a new record.
+15.3 The window is a global setting: Settings > "Group taps within": 10s, 30s, 60s, 2 min, 5 min. Default 60s (`defaultTapWindow` in `lib/domain/models/tap_cluster.dart`). Stored as `quitcash.number.tapWindowSeconds`; unknown values fall back to 60s.
+15.4 Switching, adding or deleting goals, Reset, and editing or deleting a record close the open cluster. A relaunch starts with no open cluster.
+15.5 Each tap is written at once: the first tap appends a record, later taps update it in place. An app kill mid-cluster loses nothing.
+15.6 Animations, level-ups and badge popups still fire per tap.
+15.7 History: tap the dollar total in the top-left of Bank. It lists the active goal's records newest first, grouped by day (Today, Yesterday, date) with a day total, amount, time and a mini coin (largest denomination at or below the amount). Empty state when there are no records.
+15.8 Edit: tap a record. Amount accepts cents (`8`, `8.5`, `8.50`), must be > $0 and <= $9,999.99 (`parseCents`). Date and time can be changed too. Delete asks for confirmation and shows an Undo snackbar.
+15.9 Total, level and badges are always recomputed from history. An edit down or a delete can take back a level or a badge; nothing is kept separately.
+15.10 Migration: per-tap history (`quitcash.goal.<id>.entries.v1`, also the target of the single-goal migration in 14.8) is clustered with the default 60s window into `entries.v2` on first load, then v1 is removed (v2 is written first, so an interrupted migration re-runs). The total is unchanged; old check-in rows are dropped as before.
+

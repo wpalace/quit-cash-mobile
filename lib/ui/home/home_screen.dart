@@ -17,6 +17,7 @@ import 'package:quit_cash_mobile/ui/core/widgets/reminder_picker.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/spinning_coin.dart';
 import 'package:quit_cash_mobile/ui/core/widgets/ticking_number.dart';
 import 'package:quit_cash_mobile/ui/goals/goals_screen.dart';
+import 'package:quit_cash_mobile/ui/history/history_screen.dart';
 import 'package:quit_cash_mobile/ui/settings/settings_screen.dart';
 import 'package:quit_cash_mobile/utils/money.dart';
 
@@ -383,27 +384,33 @@ class _DollarCounter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _Pill(
-      child: Row(
-        children: [
-          AnimatedScale(
-            scale: bump ? 1.35 : 1,
-            duration: const Duration(milliseconds: 100),
-            child: SpinningCoin(
-              key: coinKey,
-              size: 30,
-              period: const Duration(milliseconds: 900),
+    return GestureDetector(
+      key: const Key('open-history'),
+      behavior: HitTestBehavior.opaque,
+      onTap: () => Navigator.of(context)
+          .push(MaterialPageRoute<void>(builder: (_) => const HistoryScreen())),
+      child: _Pill(
+        child: Row(
+          children: [
+            AnimatedScale(
+              scale: bump ? 1.35 : 1,
+              duration: const Duration(milliseconds: 100),
+              child: SpinningCoin(
+                key: coinKey,
+                size: 30,
+                period: const Duration(milliseconds: 900),
+              ),
             ),
-          ),
-          const SizedBox(width: 6),
-          TickingNumber(
-            key: const Key('hud-total'),
-            value: total,
-            format: money,
-            duration: const Duration(milliseconds: 250),
-            style: _hudLabel,
-          ),
-        ],
+            const SizedBox(width: 6),
+            TickingNumber(
+              key: const Key('hud-total'),
+              value: total,
+              format: money,
+              duration: const Duration(milliseconds: 250),
+              style: _hudLabel,
+            ),
+          ],
+        ),
       ),
     );
   }

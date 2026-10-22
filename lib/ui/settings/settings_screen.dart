@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:quit_cash_mobile/domain/models/tap_cluster.dart';
 import 'package:quit_cash_mobile/ui/core/themes/denominations.dart';
 import 'package:quit_cash_mobile/ui/core/themes/palette.dart';
 import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
@@ -43,6 +44,15 @@ class SettingsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               _CoinToggles(model: model),
+              const SizedBox(height: 24),
+              const Text('⏱️ Group taps within', style: _heading),
+              const SizedBox(height: 4),
+              const Text(
+                'Quick taps (like \$5 + \$1 + \$1) become one history record.',
+                style: TextStyle(color: Colors.white60),
+              ),
+              const SizedBox(height: 8),
+              _TapWindowPicker(model: model),
               const SizedBox(height: 24),
               const Text('⏰ Reminders (7 pm)', style: _heading),
               const SizedBox(height: 8),
@@ -95,6 +105,37 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
     if (ok == true) await model.reset();
+  }
+}
+
+class _TapWindowPicker extends StatelessWidget {
+  const _TapWindowPicker({required this.model});
+  final SavingsViewModel model;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final s in tapWindowChoices)
+          ChoiceChip(
+            key: Key('tap-window-$s'),
+            label: Text(tapWindowLabel(s)),
+            selected: model.tapWindowSeconds == s,
+            onSelected: (_) => model.setTapWindowSeconds(s),
+            selectedColor: Palette.gold,
+            backgroundColor: Palette.card,
+            labelStyle: TextStyle(
+              color: model.tapWindowSeconds == s
+                  ? Palette.outline
+                  : Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+            side: BorderSide.none,
+          ),
+      ],
+    );
   }
 }
 
