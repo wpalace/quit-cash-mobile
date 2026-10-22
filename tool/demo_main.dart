@@ -54,11 +54,18 @@ InMemorySavingsRepository demoRepository(DateTime now) {
 }
 
 void main() {
+  // Query options: ?tab=0 (Bank) and ?change=1 (Change mode on).
+  final q = Uri.base.queryParameters;
   final repo = demoRepository(DateTime.now());
+  if (q['change'] == '1') {
+    repo.flags
+      ..[SavingsViewModel.changeKey] = true
+      ..[SavingsViewModel.changeModeKey] = true;
+  }
   runApp(
     ChangeNotifierProvider(
       create: (_) => SavingsViewModel(repository: repo),
-      child: const QuitCashApp(initialTab: 2),
+      child: QuitCashApp(initialTab: int.tryParse(q['tab'] ?? '') ?? 2),
     ),
   );
 }
