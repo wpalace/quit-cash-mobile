@@ -32,6 +32,21 @@ void main() {
       expect(up!.newLevel, 3);
     });
 
+    test('off: new goal crossing badges pops nothing; no backlog', () async {
+      final r = repo();
+      final m = SavingsViewModel(repository: r);
+      await Future<void>.delayed(Duration.zero);
+      await m.setShowLevels(false);
+      final g = await m.addGoal('coffee');
+      expect(m.activeGoal?.id, g.id);
+      final cel = await m.addCents(10000);
+      expect(cel!.isEmpty, isTrue);
+      expect(m.progress.unlocked, contains('hundred')); // earned silently
+      await m.setShowLevels(true);
+      final next = await m.addCents(1);
+      expect(next!.isEmpty, isTrue); // no backlog of badges or levels
+    });
+
     test('Two Hundred Club badge is dollar based', () {
       final a = achievements.firstWhere((a) => a.id == 'lvl5');
       expect(a.title, 'Two Hundred Club');

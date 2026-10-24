@@ -54,7 +54,7 @@ class SettingsScreen extends StatelessWidget {
                   style: TextStyle(color: Colors.white),
                 ),
                 subtitle: const Text(
-                  'Level badge, progress bar and level-ups, for all goals.',
+                  'Levels, progress bar and badge pop-ups, for all goals.',
                   style: TextStyle(color: Colors.white60),
                 ),
                 value: model.showLevels,

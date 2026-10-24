@@ -413,6 +413,9 @@ class SavingsViewModel extends ChangeNotifier {
     notifyListeners();
     // Reminder copy quotes the total, so refresh it.
     unawaited(_reschedule());
+    // Levels off: badges are still earned (derived from dollars), but
+    // nothing pops up, now or later.
+    if (!_showLevels) return const Celebration();
     final after = progress;
     final newIds = after.unlocked.difference(before.unlocked);
     return Celebration(
