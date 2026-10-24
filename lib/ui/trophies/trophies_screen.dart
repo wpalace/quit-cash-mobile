@@ -20,7 +20,11 @@ class TrophiesScreen extends StatelessWidget {
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverToBoxAdapter(
-              child: _Summary(progress: p, goal: model.activeGoal),
+              child: _Summary(
+                progress: p,
+                goal: model.activeGoal,
+                showLevels: model.showLevels,
+              ),
             ),
           ),
           SliverPadding(
@@ -44,8 +48,13 @@ class TrophiesScreen extends StatelessWidget {
 }
 
 class _Summary extends StatelessWidget {
-  const _Summary({required this.progress, required this.goal});
+  const _Summary({
+    required this.progress,
+    required this.goal,
+    required this.showLevels,
+  });
   final Progress progress;
+  final bool showLevels;
   final Goal? goal;
 
   @override
@@ -72,7 +81,7 @@ class _Summary extends StatelessWidget {
         Row(
           children: [
             _Stat('Total', money(p.total)),
-            _Stat('Level', '${p.level}'),
+            if (showLevels) _Stat('Level', '${p.level}'),
             _Stat('Badges', '${unlocked.length}/${achievements.length}'),
           ],
         ),

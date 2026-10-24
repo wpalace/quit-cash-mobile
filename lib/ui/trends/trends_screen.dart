@@ -53,7 +53,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
             onScope: (all) => setState(() => _allGoals = all),
           ),
           const SizedBox(height: 16),
-          _Hero(report: r),
+          _Hero(report: r, showLevels: model.showLevels),
           _ChartCard(report: r),
           _Stats(report: r),
           _Patterns(report: r),
@@ -169,8 +169,9 @@ String _periodCaption(TrendPeriod p) => switch (p) {
 };
 
 class _Hero extends StatelessWidget {
-  const _Hero({required this.report});
+  const _Hero({required this.report, required this.showLevels});
   final TrendReport report;
+  final bool showLevels;
 
   @override
   Widget build(BuildContext context) {
@@ -180,41 +181,57 @@ class _Hero extends StatelessWidget {
       child: Center(
         child: Column(
           children: [
-            ProgressRing(
-              key: const Key('trend-ring'),
-              fraction: p.levelFraction,
-              center: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    moneyCents(report.totalCents),
-                    key: const Key('period-total'),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 38,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  Text(
-                    _periodCaption(report.period),
-                    style: const TextStyle(
-                      color: Palette.gold,
-                      fontSize: 12,
-                      letterSpacing: 1.6,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
+            if (showLevels)
+              ProgressRing(
+                key: const Key('trend-ring'),
+                fraction: p.levelFraction,
+                center: _HeroTotal(report: report),
+              )
+            else
+              _HeroTotal(report: report),
+            if (showLevels) ...[
+              const SizedBox(height: 14),
+              Text(
+                key: const Key('trend-level'),
+                'LV ${p.level} · ${moneyCents(toGo)} to \$${p.nextThreshold}',
+                style: const TextStyle(color: Colors.white70, fontSize: 15),
               ),
-            ),
-            const SizedBox(height: 14),
-            Text(
-              'LV ${p.level} · ${moneyCents(toGo)} to \$${p.nextThreshold}',
-              style: const TextStyle(color: Colors.white70, fontSize: 15),
-            ),
+            ],
           ],
         ),
       ),
+    );
+  }
+}
+
+class _HeroTotal extends StatelessWidget {
+  const _HeroTotal({required this.report});
+  final TrendReport report;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          moneyCents(report.totalCents),
+          key: const Key('period-total'),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 38,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        Text(
+          _periodCaption(report.period),
+          style: const TextStyle(
+            color: Palette.gold,
+            fontSize: 12,
+            letterSpacing: 1.6,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
     );
   }
 }

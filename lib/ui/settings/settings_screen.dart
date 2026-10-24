@@ -45,6 +45,22 @@ class SettingsScreen extends StatelessWidget {
               const SizedBox(height: 8),
               _CoinToggles(model: model),
               const SizedBox(height: 24),
+              const Text('🏆 Levels', style: _heading),
+              SwitchListTile(
+                key: const Key('toggle-levels'),
+                contentPadding: EdgeInsets.zero,
+                title: const Text(
+                  'Show levels',
+                  style: TextStyle(color: Colors.white),
+                ),
+                subtitle: const Text(
+                  'Level badge, progress bar and level-ups, for all goals.',
+                  style: TextStyle(color: Colors.white60),
+                ),
+                value: model.showLevels,
+                onChanged: model.setShowLevels,
+              ),
+              const SizedBox(height: 24),
               const Text('⏱️ Group taps within', style: _heading),
               const SizedBox(height: 4),
               const Text(

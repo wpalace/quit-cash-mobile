@@ -198,6 +198,19 @@ class SavingsViewModel extends ChangeNotifier {
           showFiveHundred: _showFiveHundred,
         );
 
+  static const showLevelsKey = 'showLevels';
+  bool _showLevels = true;
+
+  /// Settings: show levels (rank, progress bar, level-ups) for all goals.
+  /// On by default. Levels derive from totals, so nothing is lost when off.
+  bool get showLevels => _showLevels;
+
+  Future<void> setShowLevels(bool value) async {
+    _showLevels = value;
+    notifyListeners();
+    _report('save setting', await _repo.saveFlag(showLevelsKey, value));
+  }
+
   static const changeKey = 'change';
   static const changeModeKey = 'changeMode';
   bool _changeEnabled = false;
@@ -297,6 +310,9 @@ class SavingsViewModel extends ChangeNotifier {
     _changeMode =
         _orElse('load setting', await _repo.loadFlag(changeModeKey), null) ??
         false;
+    _showLevels =
+        _orElse('load setting', await _repo.loadFlag(showLevelsKey), null) ??
+        true;
     _tapWindowSeconds = _validWindow(
       _orElse('load setting', await _repo.loadNumber(tapWindowKey), null),
     );
@@ -400,7 +416,7 @@ class SavingsViewModel extends ChangeNotifier {
     final after = progress;
     final newIds = after.unlocked.difference(before.unlocked);
     return Celebration(
-      newLevel: after.level > before.level ? after.level : null,
+      newLevel: _showLevels && after.level > before.level ? after.level : null,
       badges: [
         for (final a in achievements)
           if (newIds.contains(a.id)) a,

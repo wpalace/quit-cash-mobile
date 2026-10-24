@@ -153,6 +153,7 @@ class _HomeScreenState extends State<HomeScreen>
             children: [
               _Hud(
                 progress: p,
+                showLevels: model.showLevels,
                 total: _displayTotal ?? p.total,
                 bump: _hudBump,
                 coinKey: _hudCoinKey,
@@ -337,11 +338,13 @@ const _hudLabel = TextStyle(
 class _Hud extends StatelessWidget {
   const _Hud({
     required this.progress,
+    required this.showLevels,
     required this.total,
     required this.bump,
     required this.coinKey,
   });
   final Progress progress;
+  final bool showLevels;
   final double total;
   final bool bump;
   final GlobalKey coinKey;
@@ -367,19 +370,24 @@ class _Hud extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
-              _Pill(
-                color: Palette.gold,
-                child: Text(
-                  'LV ${progress.level}',
-                  style: _hudLabel.copyWith(color: Palette.outline),
+              if (showLevels) ...[
+                const SizedBox(width: 8),
+                _Pill(
+                  key: const Key('level-pill'),
+                  color: Palette.gold,
+                  child: Text(
+                    'LV ${progress.level}',
+                    style: _hudLabel.copyWith(color: Palette.outline),
+                  ),
                 ),
-              ),
+              ],
               const _SettingsButton(),
             ],
           ),
-          const SizedBox(height: 10),
-          _LevelProgress(progress: progress),
+          if (showLevels) ...[
+            const SizedBox(height: 10),
+            _LevelProgress(progress: progress),
+          ],
         ],
       ),
     );
@@ -498,7 +506,7 @@ class _LevelProgress extends StatelessWidget {
 }
 
 class _Pill extends StatelessWidget {
-  const _Pill({required this.child, this.color = Palette.card});
+  const _Pill({super.key, required this.child, this.color = Palette.card});
   final Widget child;
   final Color color;
 

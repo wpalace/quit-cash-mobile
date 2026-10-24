@@ -60,10 +60,10 @@ final List<Achievement> achievements = [
   ),
   Achievement(
     'lvl5',
-    'Level 5',
-    'Reach level 5 (\$200 saved)',
+    'Two Hundred Club',
+    'Save \$200 in total',
     '🏆',
-    (p) => p.level >= 5,
+    (p) => p.totalCents >= 20000,
   ),
   Achievement(
     'fivehundred',

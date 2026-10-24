@@ -10,6 +10,7 @@ import 'package:quit_cash_mobile/domain/models/goal.dart';
 import 'package:quit_cash_mobile/domain/models/save_entry.dart';
 import 'package:quit_cash_mobile/ui/app/quit_cash_app.dart';
 import 'package:quit_cash_mobile/ui/core/view_models/savings_view_model.dart';
+import 'package:quit_cash_mobile/ui/settings/settings_screen.dart';
 
 /// About 14 months of believable history for two goals: evening cigarette
 /// cravings (more on Fri/Sat) and weekday morning coffees. Seeded, so every
@@ -54,13 +55,28 @@ InMemorySavingsRepository demoRepository(DateTime now) {
 }
 
 void main() {
-  // Query options: ?tab=0 (Bank) and ?change=1 (Change mode on).
+  // Query options: ?tab=0 (Bank), ?change=1 (Change mode on),
+  // ?levels=0 (levels off) and ?screen=settings (Settings page).
   final q = Uri.base.queryParameters;
   final repo = demoRepository(DateTime.now());
   if (q['change'] == '1') {
     repo.flags
       ..[SavingsViewModel.changeKey] = true
       ..[SavingsViewModel.changeModeKey] = true;
+  }
+  if (q['levels'] == '0') repo.flags[SavingsViewModel.showLevelsKey] = false;
+  if (q['screen'] == 'settings') {
+    runApp(
+      ChangeNotifierProvider(
+        create: (_) => SavingsViewModel(repository: repo),
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData.dark(),
+          home: const SettingsScreen(),
+        ),
+      ),
+    );
+    return;
   }
   runApp(
     ChangeNotifierProvider(

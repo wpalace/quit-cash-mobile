@@ -44,6 +44,7 @@ class GoalsScreen extends StatelessWidget {
             GoalTile(
               goal: g,
               progress: model.progressFor(g.id),
+              showLevels: model.showLevels,
               active: g.id == active?.id,
               onTap: () => model.switchGoal(g.id),
               onDelete: () => confirmDeleteGoal(context, model, g),

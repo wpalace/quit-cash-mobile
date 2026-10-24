@@ -80,11 +80,11 @@ ReminderCopy reminderCopy(int i, {required int dollars}) {
     ),
     (
       title: '💪 Craving? Turn it into gold',
-      body: 'Every skip is money kept. Tap to bank it and level up.',
+      body: 'Every skip is money kept. Tap to bank it.',
     ),
     (
       title: '🏆 Your next milestone is closer than you think',
-      body: 'Open QuitCash and see how many dollars to your next level.',
+      body: 'Open QuitCash and see how close you are.',
     ),
   ];
   return lines[i % lines.length];

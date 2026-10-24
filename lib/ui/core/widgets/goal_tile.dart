@@ -14,6 +14,7 @@ class GoalTile extends StatelessWidget {
     required this.active,
     required this.onTap,
     this.onDelete,
+    this.showLevels = true,
   });
 
   final Goal goal;
@@ -21,6 +22,7 @@ class GoalTile extends StatelessWidget {
   final bool active;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
+  final bool showLevels;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +43,9 @@ class GoalTile extends StatelessWidget {
         leading: Text(goal.emoji, style: const TextStyle(fontSize: 30)),
         title: _Title(goal: goal, active: active),
         subtitle: Text(
-          'LV ${progress.level} · ${money(progress.total)} saved',
+          showLevels
+              ? 'LV ${progress.level} · ${money(progress.total)} saved'
+              : '${money(progress.total)} saved',
           style: const TextStyle(color: Colors.white70),
         ),
         trailing: onDelete == null

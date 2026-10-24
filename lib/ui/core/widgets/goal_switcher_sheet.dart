@@ -53,6 +53,7 @@ class _Switcher extends StatelessWidget {
               GoalTile(
                 goal: g,
                 progress: model.progressFor(g.id),
+                showLevels: model.showLevels,
                 active: g.id == active?.id,
                 onTap: () {
                   unawaited(model.switchGoal(g.id));
